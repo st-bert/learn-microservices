@@ -374,6 +374,7 @@ Therefore, when working with GraphQL, it is important to examine the content of 
 **Exceptions handling**
 
 It is possible to enhance the response of wrong query in order to make it more verbose (e.g. *notfoundexception* in the case of an object not found instead of a generic one). It can be done by adding a custom exception resolver class (extending *DataFetcherExceptionResolverAdapter*) like this:
+
 ```java
 @Component
 public class GraphQlCustomExceptionResolver extends DataFetcherExceptionResolverAdapter {
