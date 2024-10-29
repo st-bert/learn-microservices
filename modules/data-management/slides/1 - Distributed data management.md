@@ -2,43 +2,61 @@
 
 ## Introduction
 
-The *SAGA design pattern* is a software architectural pattern used to manage complex, long-running transactions across multiple microservices or distributed systems. In a SAGA, a sequence of smaller, isolated transactions is executed step by step. Each transaction is managed by a separate microservice and, if one transaction fails, the pattern ensures the execution of compensating transactions to undo the effects of the preceding steps, thereby maintaining data consistency. This approach is particularly useful in microservices architectures where a single monolithic transaction is not feasible due to the distributed nature of the system.
+The **SAGA pattern** is an architectural approach designed to manage complex, long-running transactions across distributed services, making it particularly valuable in microservices environments where a single, monolithic transaction is unfeasible.
 
-In a microservices architecture, traditional ACID (Atomicity, Consistency, Isolation, Durability) transactions become challenging to implement because they rely on a single, centralized database to ensure data consistency across multiple operations. However, in a microservices environment, data is typically distributed across multiple services, each with its own database. This distribution makes it difficult to maintain ACID properties across service boundaries, particularly **isolation**, which ensures that transactions do not interfere with each other.As a result, an application must use what are known as *countermeasures*, design techniques that prevent or reduce the impact of concurrency anomalies caused by the lack of
-isolation. This topic and how to address it will be discussed in more detail later in the notebook.
+In a SAGA, transactions are broken down into a sequence of smaller, isolated steps:
 
+- Each step is managed by a separate microservice, often with its own database.
+- If any step fails, compensating transactions are triggered to undo previous operations, ensuring data consistency.
 
-## Anomalies that the lack of isolation can cause
+In microservices architectures, maintaining traditional ACID (Atomicity, Consistency, Isolation, Durability) properties becomes challenging, especially for isolation, which prevents transactions from interfering with one another. This is due to each service having its own distributed data store. The SAGA pattern helps address these challenges by using countermeasures to minimize the impact of concurrency anomalies, providing a practical alternative to ACID transactions in distributed systems.
 
-The lack of isolation, as mentioned at the beginning, can cause the three following problems:
+### ACID Properties in Transactions
 
-- **Lost Updates**: This anomaly occurs when one saga overwrites the changes made by another saga without first reading them. As a result, critical updates can be lost, leading to inconsistent or incorrect data in the system.
+The **ACID** properties—**Atomicity, Consistency, Isolation, and Durability**—define the reliability requirements for transactions in traditional database systems. These properties ensure that transactions are processed in a predictable, reliable manner, even in the event of system failures.
 
-- **Dirty Reads**: This happens when a saga reads data that is currently being updated by another saga that hasn't yet completed its transaction. This can lead to decisions based on incomplete or incorrect data, potentially causing significant issues like exceeding credit limits or making unauthorized changes.
+- **Atomicity**: This property ensures that a transaction is treated as a single, indivisible unit. If any part of the transaction fails, the entire transaction is rolled back, leaving the system in its original state. This "all-or-nothing" approach guarantees that either all steps of a transaction are completed successfully, or none are applied at all.
 
-- **Fuzzy/nonrepeatable reads**: It happens when two different steps of a saga read the same data and
-  get different results because another saga has made updates.
+- **Consistency**: Consistency guarantees that a transaction brings the database from one valid state to another. Each transaction must comply with all predefined rules, constraints, and triggers to preserve the integrity of the data. This means that a completed transaction should leave the database in a valid state, reflecting the system’s business rules and constraints.
 
-## How to solve the lack of isolation problem
+- **Isolation**: Isolation ensures that transactions are executed independently, without interference. Each transaction should act as if it is the only one interacting with the database, even if others are running concurrently. Isolation is essential for preventing issues such as **dirty reads** (reading uncommitted data), **non-repeatable reads** (different data returned in repeated reads within a transaction), and **phantom reads** (new data appears in repeated reads within a transaction).
 
-The saga transaction model adheres to ACD (Atomicity, Consistency, Durability) principles but lacks isolation, leading to potential anomalies that can cause issues in applications. Developers must implement strategies to either prevent these anomalies or reduce their impact on the business.  The key countermeasures usually used are:
+- **Durability**: This property ensures that once a transaction is committed, its results are permanent, even in case of power loss, crashes, or other failures. Changes made by a committed transaction are stored in persistent storage and are guaranteed to survive any subsequent system failures.
 
-- **Semantic lock**: involves setting a flag on a record during a compensatable transaction to indicate that the record is not yet finalized and could change. This flag can act as a lock, preventing other transactions from accessing the record, or as a warning, advising other transactions to proceed with caution. The flag is cleared when the saga completes successfully (via a retriable transaction) or when it rolls back (via a compensating transaction).
+Together, these ACID properties are essential in maintaining data accuracy, consistency, and reliability in traditional, centralized databases, enabling them to handle complex, critical operations reliably. In distributed systems, however, achieving strict ACID properties becomes challenging, especially for Isolation, leading to the need for alternative approaches like the **SAGA Pattern** in microservices architectures.
 
-- **Commutative updates**: Design updates to be executable in any order. They must be commutative.
+### Anomalies Caused by Lack of Isolation
 
-- **Pessimistic view**: Reorder saga steps to minimize business risk. It addresses the lack of isolation by reordering the steps of a saga to reduce business risks associated with dirty reads. By strategically adjusting the sequence of transactions, this approach ensures that more critical operations occur in a way that minimizes the potential impact of inconsistent data, thereby reducing the likelihood of errors caused by concurrent transactions.
+In a distributed system with limited isolation, several anomalies can disrupt data consistency:
 
-- **Reread value**: Prevent dirty writes by verifying data before overwriting it. If the record has been modified, the saga aborts and may restart. This approach is a form of the Optimistic Offline Lock pattern. By checking for changes before committing an update, this countermeasure ensures that the saga operates on consistent data, reducing the risk of conflicts or overwriting updates made by other processes.
+- **Lost Updates**: This anomaly occurs when one saga overwrites changes made by another saga without reading them first. This results in critical updates being lost, leading to inconsistent or incorrect data within the system.
 
-- **Version file**: Record updates to allow reordering. Th
-  is countermeasure addresses the issue of out-of-order operations by recording each operation performed on a record. This log allows the system to reorder operations to ensure they are applied in the correct sequence. By maintaining a record of operations, the system can handle concurrent requests more effectively. This approach effectively transforms noncommutative operations into commutative ones, ensuring consistency even when transactions are processed out of order.
+- **Dirty Reads**: This issue arises when a saga reads data that is still being modified by another saga that hasn’t completed its transaction. Such reads can lead to decisions based on incomplete or incorrect data, potentially resulting in problems like exceeding credit limits or applying unauthorized changes.
 
-- **By value**: Use the business risk of each request to dynamically select a concurrency mechanism. It involves selecting concurrency mechanisms based on the business risk associated with each request. For low-risk requests, such as those involving minor operations, sagas with appropriate countermeasures can be used. For high-risk requests, like those involving substantial financial transactions, distributed transactions are employed to ensure higher levels of consistency and reliability. This approach allows applications to balance business risk, availability, and scalability dynamically.
+- **Fuzzy/Non-repeatable Reads**: This happens when different steps within the same saga read the same data but receive inconsistent results due to updates from another saga. This lack of stability can lead to unreliable outcomes in transaction processing.
+
+These anomalies highlight the challenges of maintaining data integrity in a distributed environment without strict isolation controls.
+
+### Addressing the Lack of Isolation in Saga Transactions
+
+In the saga model, transactions are **ACD-compliant** (Atomicity, Consistency, Durability) but lack **Isolation**, leading to possible anomalies that can affect business operations. To mitigate these issues, developers can employ several countermeasures:
+
+- **Semantic Lock**: This method involves placing a temporary flag on a record during a compensatable transaction to signal that the data may still change. This flag serves as either a hard lock, preventing other transactions from accessing the record, or a soft warning, advising caution for other transactions. The flag is removed once the saga completes (either through a successful retriable transaction or a compensating rollback).
+
+- **Commutative Updates**: Ensures that updates are designed to be executed in any order, meaning they are **commutative**. This reduces the potential impact of concurrent operations and helps maintain data consistency.
+
+- **Pessimistic View**: By reordering the steps in a saga, this countermeasure reduces business risks associated with dirty reads. Critical steps are sequenced to occur in a way that limits the effect of inconsistent data, reducing the likelihood of errors from concurrent transactions.
+
+- **Reread Value**: This method prevents dirty writes by verifying the data before making an update. If the data has been modified, the saga aborts and may restart. Acting as a type of **Optimistic Offline Lock**, this countermeasure ensures that the saga uses consistent data, minimizing conflicts or overwrites from other operations.
+
+- **Version File**: This technique logs each update to maintain the correct order of operations. By recording each transaction, the system can reorder actions to maintain sequence integrity. This countermeasure effectively transforms non-commutative actions into commutative ones, supporting data consistency even when transactions are processed out of order.
+
+- **By Value**: This approach dynamically selects a concurrency mechanism based on the business risk associated with each request. For low-risk actions, sagas with countermeasures may suffice. However, for high-risk transactions (e.g., financial transfers), distributed transactions ensure more rigorous consistency. This strategy allows a flexible balance between business risk, availability, and scalability.
+
+These countermeasures collectively help maintain data integrity and minimize concurrency anomalies in systems where strict isolation is unfeasible.
 
 
 ## Why cannot we use a distributed transaction?
-
 
 Distributed transactions, managed through the X/Open Distributed Transaction Processing (DTP) Model and typically implemented with two-phase commit (2PC), ensure that all participants in a transaction either commit or roll back together. While this approach may seem straightforward, it has significant limitations.
 
@@ -56,25 +74,23 @@ In the image there is an example of what we have mentioned at the beginning of t
 
 The dashed box around these services indicates the need for data consistency when performing these operations. The figure emphasizes that the `createOrder()` operation must update data across several services, requiring a mechanism to maintain consistency.
 
-## How can we implement SAGA Pattern?
+### Implementing the SAGA Pattern
 
-The alternative to the distributed transactions is SAGA Pattern. To implement it, two primary approaches can be utilized:
+To replace traditional distributed transactions, the **SAGA Pattern** offers a solution for coordinating transactions across services in a microservices architecture. Two primary approaches can be used to implement SAGA:
 
-- **Choreography**: In this approach, each service involved in the saga performs its local transaction and then publishes an event to signal other services that the next step can proceed. This method is decentralized, with services reacting to events and executing their respective tasks. While choreography can simplify the design by eliminating the need for a central controller, it may lead to increased complexity as the number of interactions grows, making the overall process harder to manage and understand.
+- **Choreography**: Here, each service involved in the saga performs its local transaction and then publishes an event to notify other services that the next step can begin. This approach is decentralized: each service reacts to events and performs its designated task. While this simplifies design by removing the need for a central controller, complexity can increase with more interactions, making the saga harder to track and manage.
 
-![](images/choreography.webp)
+  ![Choreography Example](images/choreography.webp)
 
-- **Orchestration**: This approach involves a centralized controller, known as the saga orchestrator, which coordinates the sequence of transactions. The orchestrator sends commands to each service to execute its part of the saga. If a step fails, the orchestrator triggers compensating transactions to roll back completed steps, thereby maintaining consistency. Orchestration offers better control and visibility over the saga's execution, though it introduces a potential single point of failure and can complicate the orchestrator's logic.
+- **Orchestration**: This approach relies on a centralized **saga orchestrator** to coordinate the transaction steps. The orchestrator sends commands to each service, instructing them to execute their part of the saga. If any step fails, the orchestrator initiates compensating actions to roll back prior steps, ensuring consistency. Orchestration provides better control and visibility, though it introduces a potential single point of failure and can make the orchestrator’s logic more complex.
 
-![](images/orchestration.webp)
+  ![Orchestration Example](images/orchestration.webp)
 
-Both approaches are designed to maintain data consistency across distributed services without relying on traditional ACID transactions, making them essential in a microservices architecture. The choice between choreography and orchestration depends on the system's specific requirements and complexity.
+Both approaches aim to achieve data consistency across distributed services without relying on traditional ACID transactions. The choice between choreography and orchestration depends on the complexity and control requirements of the system.
 
 ## Why is orchestration more widespread?
 
 ### Limitations of Choreography
-
-Coreography has some limitations:
 
 - **Tight Coupling**: Services are directly connected, meaning changes in one service can impact others, complicating upgrades.
 - **Distributed State**: Managing state across microservices complicates process tracking and may require additional infrastructure.
@@ -83,8 +99,6 @@ Coreography has some limitations:
 - **Maintenance Difficulty**: As services evolve, adding new versions can reintroduce complexity, resembling a distributed monolith.
 
 ### Advantages of Orchestration
-
-On the other hands, Orchestration has more advantages that makes this solution more feasible in many contexts:
 
 - **Coordinated Transactions**: A central coordinator manages the execution of microservices, ensuring consistent transactions across the system.
 - **Compensation**: Supports rollback through compensating transactions in case of failures, maintaining system consistency.
@@ -95,7 +109,5 @@ On the other hands, Orchestration has more advantages that makes this solution m
 
 ## References
 
-[Microservices Patterns - O'Reilly](https://www.oreilly.com/library/view/microservices-patterns/9781617294549/)
-
-
-[Microservices Pattern - SAGA](https://microservices.io/patterns/data/saga.html)
+* [Microservices Patterns - O'Reilly](https://www.oreilly.com/library/view/microservices-patterns/9781617294549/)
+* [Microservices Pattern - SAGA](https://microservices.io/patterns/data/saga.html)

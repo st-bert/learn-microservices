@@ -1,5 +1,14 @@
 # Project README
 
+## Functionalities
+
+- **User Authentication:** Secure login and registration system for users.
+- **File Storage:** Upload and manage files using the MinIO object storage.
+- **User Profiles:** View and edit user profiles, including avatars.
+- **Posts and Comments:** Create, view, and delete posts.
+- **Interactions:** Like and comment posts.
+- **GraphQL:** The main service that handles all the application's functionalities interacts with the User's, Post's, and Interaction's services through GraphQL.
+
 ## Installation and Setup
 
 1. **Build the Project**
@@ -26,27 +35,6 @@ Once the Docker containers are up and running, the application should be accessi
 
 - **Web Application URL:** `http://localhost:7000`
 
-## Functionalities
-
-- **User Authentication:** Secure login and registration system for users.
-- **File Storage:** Upload and manage files using the MinIO object storage.
-- **User Profiles:** View and edit user profiles, including avatars.
-- **Posts and Comments:** Create, view, and delete posts.
-- **Interactions:** Like and comment posts.
-- **GraphQL:** The main service that handles all the application's functionalities interacts with the User's, Post's, and Interaction's services through GraphQL.
-
-## Accessing the MinIO Dashboard
-
-The MinIO Dashboard allows you to manage the application's object storage.
-
-- **URL:** `http://localhost:9001`
-- **Username:** `rootname`
-- **Password:** `yourpassword`
-
-After logging in, you can view, upload, and manage the files stored by the application.
-
-## Available Users
-
 For testing purposes, the application comes with pre-configured user accounts:
 
 | Username | Password  |
@@ -61,6 +49,16 @@ For testing purposes, the application comes with pre-configured user accounts:
 You can log in using the usernames and passwords provided above, or create a new account.
 
 > **Note:** These accounts are for testing purposes only. Please do not use them in a production environment.
+
+## Accessing the MinIO Dashboard
+
+The MinIO Dashboard allows you to manage the application's object storage.
+
+- **URL:** `http://localhost:9001`
+- **Username:** `rootname`
+- **Password:** `yourpassword`
+
+After logging in, you can view, upload, and manage the files stored by the application.
 
 ## Test GrpahQL API
 
