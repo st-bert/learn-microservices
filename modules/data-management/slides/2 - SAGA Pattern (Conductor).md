@@ -1,4 +1,4 @@
-# SAGA Pattern - implementation with Conductor
+# SAGA Pattern (Conductor)
 
 ## Project structure
 
