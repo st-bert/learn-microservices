@@ -16,7 +16,7 @@ Together, these ACID properties are essential in maintaining data accuracy, cons
 
 In a distributed system, achieving strict **isolation** across services and databases is challenging due to the decentralized nature of data and processing. Here’s an example illustrating why isolation is not guaranteed in a distributed context:
 
-## Example of a Faulty Transaction Due to Missing Isolation
+## Faulty Transaction Due to Missing Isolation
 
 **Scenario**: Imagine an e-commerce platform that consists of several microservices, including an **Order Service**, a **Consumer Service**, a **Ticket Service**, and an **Accounting Service**. When a customer places an order, the Order Service needs to perform the following actions in a distributed transaction:
 
@@ -70,7 +70,7 @@ In this example, isolation failed for several reasons:
 - **Error Propagation**: The failure in the Accounting Service did not trigger compensating actions in the previous services (Consumer and Ticket), leaving the overall system in an inconsistent state.
 
 
-## Anomalies Caused by Lack of Isolation
+### Anomalies Caused by Lack of Isolation
 
 Without adequate isolation, several read anomalies can occur, leading to inconsistent or unexpected results. The three primary types of read anomalies are **Dirty Reads**, **Non-Repeatable Reads**, and **Phantom Reads**.
 
@@ -98,7 +98,7 @@ These read anomalies highlight the challenges in achieving consistent and isolat
 
 ## CAP Theorem
 
-The **CAP theorem**, also known as Brewer's theorem, is a fundamental principle in distributed systems that states it is impossible for a distributed data store to simultaneously provide all three of the following guarantees:
+The [CAP theorem](https://mwhittaker.github.io/blog/an_illustrated_proof_of_the_cap_theorem/), also known as Brewer's theorem, is a fundamental principle in distributed systems that states it is impossible for a distributed data store to simultaneously provide all three of the following guarantees:
 
 1. **Consistency (C)**: Every read operation receives the most recent write result or an error. In other words, all nodes in the system return the same data at the same time, ensuring that every client sees the same information, regardless of which node they connect to. This requires coordination among nodes to ensure that updates are propagated correctly.
 
@@ -108,7 +108,8 @@ The **CAP theorem**, also known as Brewer's theorem, is a fundamental principle 
 
 The CAP theorem posits that a distributed system can only guarantee two out of the three properties at any given time. This trade-off arises from the inherent challenges of managing data across multiple nodes, particularly in the presence of network failures or latencies.
 
-### Implications of the CAP Theorem
+### Navigating Database Choices with the CAP Theorem
+Different applications demand different priorities in terms of data consistency, system availability, and tolerance to network partitions:
 
 - **CA Systems (Consistency and Availability)**: These systems maintain consistency and availability as long as there are no network partitions. However, if a partition occurs, the system must sacrifice either consistency or availability to maintain operations. An example of this might be a traditional relational database that ensures consistency and availability under normal conditions but may become unavailable during network issues.
 
@@ -116,9 +117,16 @@ The CAP theorem posits that a distributed system can only guarantee two out of t
 
 - **AP Systems (Availability and Partition Tolerance)**: These systems focus on availability and partition tolerance, accepting that some data may be stale or inconsistent during network partitions. They continue to respond to requests even if some nodes cannot communicate. NoSQL databases like Cassandra or DynamoDB are examples of AP systems, allowing for high availability and responsiveness even in the face of network failures.
 
-**Real-World Applications**
+![](images/cap-theorem.webp)
 
-In practice, most distributed systems must make trade-offs based on their specific use cases and requirements. For example, an online banking application may prioritize consistency and choose a CP approach to ensure accurate transaction processing. In contrast, a social media platform may adopt an AP approach to ensure that users can still post updates even during network issues, accepting some temporary inconsistencies in data.
+Here's how popular databases measure up against the CAP dimensions:
+
+- **Relational Databases (MySQL, PostgreSQL, and SAP Hana)** - Consistency and Availability: Applications requiring transactional integrity and complex queries, such as financial systems and ERP solutions.
+- **NoSQL Databases (DynamoDB, Cassandra, Couchbase)** - Availability and Partition Tolerance: Scalable applications with flexible data models and the need for high availability, like social media platforms and real-time analytics systems.
+- **Analytical Databases (Vertica, Redshift)** - Consistency and Partition Tolerance: Data warehousing and business intelligence applications requiring fast queries over large datasets.
+- **Graph Databases (Neo4j)** - Consistency and Availability: It focuses on maintaining data integrity in highly connected data. Applications with complex relationships and network analysis features, such as recommendation engines and fraud detection systems.
+- **Document Stores (MongoDB) and Key-Value Stores (Redis)** - Consistency and Partition Tolerance: Applications needing schema flexibility (MongoDB) or high-performance caching and real-time operations (Redis).
+- **Column Stores (HBase)** - Consistency and Partition Tolerance: Big data applications requiring efficient read/write access to large datasets, such as time-series data and event logging.
 
 
 ## Implementing the SAGA Pattern
