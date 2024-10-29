@@ -96,8 +96,29 @@ These read anomalies highlight the challenges in achieving consistent and isolat
 * Many contemporary technologies, including popular **NoSQL databases** like **MongoDB** and **Cassandra**, as well as modern messaging systems such as **RabbitMQ** and **Apache Kafka**, do not inherently support distributed transactions. This lack of support complicates the implementation of 2PC in environments where these technologies are prevalent. 
 * Distributed transactions are inherently **synchronous**. This means that all participating services must be available and responsive for the transaction to complete successfully. Consequently, the overall availability of the system is contingent upon the availability of each individual service involved in the transaction. This interdependence can significantly reduce system resilience. According to the **CAP theorem**, which states that a distributed system can only guarantee two out of the following three properties—**Consistency**, **Availability**, and **Partition Tolerance**—modern architectures frequently prioritize availability over strict consistency.
 
+## CAP Theorem
 
+The **CAP theorem**, also known as Brewer's theorem, is a fundamental principle in distributed systems that states it is impossible for a distributed data store to simultaneously provide all three of the following guarantees:
 
+1. **Consistency (C)**: Every read operation receives the most recent write result or an error. In other words, all nodes in the system return the same data at the same time, ensuring that every client sees the same information, regardless of which node they connect to. This requires coordination among nodes to ensure that updates are propagated correctly.
+
+2. **Availability (A)**: Every request (read or write) receives a response, either with the requested data or an acknowledgment of the write operation, regardless of the state of any node in the system. This means that the system remains operational and responsive, even when some nodes are down or experiencing issues.
+
+3. **Partition Tolerance (P)**: The system continues to operate despite arbitrary network partitions that prevent some nodes from communicating with others. This ensures that even in the face of network failures, the system can still function and respond to requests, albeit possibly sacrificing consistency or availability.
+
+The CAP theorem posits that a distributed system can only guarantee two out of the three properties at any given time. This trade-off arises from the inherent challenges of managing data across multiple nodes, particularly in the presence of network failures or latencies.
+
+### Implications of the CAP Theorem
+
+- **CA Systems (Consistency and Availability)**: These systems maintain consistency and availability as long as there are no network partitions. However, if a partition occurs, the system must sacrifice either consistency or availability to maintain operations. An example of this might be a traditional relational database that ensures consistency and availability under normal conditions but may become unavailable during network issues.
+
+- **CP Systems (Consistency and Partition Tolerance)**: These systems prioritize consistency and partition tolerance but may sacrifice availability in the event of a partition. If a network failure occurs, these systems may become unavailable until consistency can be restored across nodes. An example is a distributed database that chooses to block requests during a network partition to ensure that all nodes remain consistent.
+
+- **AP Systems (Availability and Partition Tolerance)**: These systems focus on availability and partition tolerance, accepting that some data may be stale or inconsistent during network partitions. They continue to respond to requests even if some nodes cannot communicate. NoSQL databases like Cassandra or DynamoDB are examples of AP systems, allowing for high availability and responsiveness even in the face of network failures.
+
+**Real-World Applications**
+
+In practice, most distributed systems must make trade-offs based on their specific use cases and requirements. For example, an online banking application may prioritize consistency and choose a CP approach to ensure accurate transaction processing. In contrast, a social media platform may adopt an AP approach to ensure that users can still post updates even during network issues, accepting some temporary inconsistencies in data.
 
 
 ## Implementing the SAGA Pattern
