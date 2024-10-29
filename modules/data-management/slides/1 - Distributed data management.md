@@ -108,30 +108,63 @@ The [CAP theorem](https://mwhittaker.github.io/blog/an_illustrated_proof_of_the_
 
 The CAP theorem posits that a distributed system can only guarantee two out of the three properties at any given time. This trade-off arises from the inherent challenges of managing data across multiple nodes, particularly in the presence of network failures or latencies.
 
-### Navigating Database Choices with the CAP Theorem
-Different applications demand different priorities in terms of data consistency, system availability, and tolerance to network partitions:
-
-- **CA Systems (Consistency and Availability)**: These systems maintain consistency and availability as long as there are no network partitions. However, if a partition occurs, the system must sacrifice either consistency or availability to maintain operations. An example of this might be a traditional relational database that ensures consistency and availability under normal conditions but may become unavailable during network issues.
-
-- **CP Systems (Consistency and Partition Tolerance)**: These systems prioritize consistency and partition tolerance but may sacrifice availability in the event of a partition. If a network failure occurs, these systems may become unavailable until consistency can be restored across nodes. An example is a distributed database that chooses to block requests during a network partition to ensure that all nodes remain consistent.
-
-- **AP Systems (Availability and Partition Tolerance)**: These systems focus on availability and partition tolerance, accepting that some data may be stale or inconsistent during network partitions. They continue to respond to requests even if some nodes cannot communicate. NoSQL databases like Cassandra or DynamoDB are examples of AP systems, allowing for high availability and responsiveness even in the face of network failures.
-
 ![](images/cap-theorem.webp)
 
-Here's how popular databases measure up against the CAP dimensions:
+### CA Systems (Consistency and Availability)
+- **Definition**: CA systems ensure **Consistency** and **Availability** but do not provide **Partition Tolerance**.
+- **Characteristics**:
+    - Every request (read or write) gets a consistent response, meaning that all nodes in the system have the same data at the same time.
+    - The system is available, meaning every request receives a response (even if it’s an error).
+    - However, these systems assume a reliable network with minimal or no network partitions. In case of a network partition, the system may fail to provide both consistency and availability.
+- **Examples**:
+    - **Relational databases in a single data center** (e.g., MySQL, PostgreSQL).
+    - **Centralized, tightly coupled distributed systems** within stable network environments.
+- **Use Cases**: CA systems are ideal for environments where network reliability is high, and both consistency and availability are critical. Examples include:
+    - **Banking systems within a single data center** where transactions need to be consistent and highly available.
+    - **Enterprise Resource Planning (ERP) systems** with minimal network failure risks.
 
-- **Relational Databases (MySQL, PostgreSQL, and SAP Hana)** - Consistency and Availability: Applications requiring transactional integrity and complex queries, such as financial systems and ERP solutions.
-- **NoSQL Databases (DynamoDB, Cassandra, Couchbase)** - Availability and Partition Tolerance: Scalable applications with flexible data models and the need for high availability, like social media platforms and real-time analytics systems.
-- **Analytical Databases (Vertica, Redshift)** - Consistency and Partition Tolerance: Data warehousing and business intelligence applications requiring fast queries over large datasets.
-- **Graph Databases (Neo4j)** - Consistency and Availability: It focuses on maintaining data integrity in highly connected data. Applications with complex relationships and network analysis features, such as recommendation engines and fraud detection systems.
-- **Document Stores (MongoDB) and Key-Value Stores (Redis)** - Consistency and Partition Tolerance: Applications needing schema flexibility (MongoDB) or high-performance caching and real-time operations (Redis).
-- **Column Stores (HBase)** - Consistency and Partition Tolerance: Big data applications requiring efficient read/write access to large datasets, such as time-series data and event logging.
+### CP Systems (Consistency and Partition Tolerance)
+- **Definition**: CP systems ensure **Consistency** and **Partition Tolerance** but do not guarantee **Availability** during network partitions.
+- **Characteristics**:
+    - They prioritize consistency, meaning all nodes have the same, up-to-date data.
+    - They tolerate network partitions, meaning the system can still function even if parts of it cannot communicate with others.
+    - If a network partition occurs, CP systems may sacrifice availability by blocking some requests to maintain consistency across nodes.
+- **Examples**:
+    - **Zookeeper**: A coordination and configuration management service that prioritizes consistency.
+    - **HBase** and **Redis** (in specific configurations): Systems that prioritize strong consistency and may block requests if partitioned to ensure all nodes stay synchronized.
+- **Use Cases**: CP systems are suitable for applications where data accuracy and consistency are critical, even at the cost of availability during network issues. Examples include:
+    - **Banking and financial transactions**, where inconsistency can lead to major errors.
+    - **Configuration management systems** where all nodes need to read consistent settings (e.g., for distributed services).
+
+### AP Systems (Availability and Partition Tolerance)
+- **Definition**: AP systems ensure **Availability** and **Partition Tolerance** but do not guarantee **Consistency**.
+- **Characteristics**:
+    - The system remains available during network partitions, meaning it can continue to serve requests even if parts of the system are isolated.
+    - Partition tolerance ensures that the system can handle network failures without going offline.
+    - Since consistency is not guaranteed, AP systems may allow different parts of the system to return different data during partitions, resulting in eventual consistency once the partition is resolved.
+- **Examples**:
+    - **Cassandra** and **DynamoDB**: NoSQL databases that prioritize availability and partition tolerance, offering eventual consistency.
+    - **Couchbase** and **Riak**: AP databases that are often used in large-scale, distributed applications.
+- **Use Cases**: AP systems are suitable for applications that require high availability and can tolerate temporary inconsistencies. Examples include:
+    - **Social media platforms** where users can tolerate minor delays in seeing consistent data.
+    - **Content delivery networks (CDNs)** where availability is critical to serve content globally despite network partitions.
+
+## The SAGA Pattern
+
+The **Saga pattern** is a design pattern for managing long-running, distributed transactions. It breaks down a large transaction into a series of smaller, isolated steps (or "sagas"), each of which is a transaction in itself. If one step in the saga fails, compensating transactions (undo actions) are triggered to maintain the overall system's integrity. Sagas achieve eventual consistency rather than strict, immediate consistency. This makes them suitable for distributed systems where traditional transactions are impractical or too costly in terms of performance.
+
+The Saga pattern is relevant in the context of CAP theorem trade-offs because it offers a way to achieve **Availability** and **Partition Tolerance** (AP) with **eventual consistency** in distributed systems:
+
+1. **Partition Tolerance and Availability**:
+    - Sagas are designed to handle distributed, long-running transactions, allowing each step to commit independently. This ensures **Availability** and **Partition Tolerance** since each service in the transaction can operate independently and locally, even if other services are temporarily unavailable or network partitions occur.
+    - When using the Saga pattern, if a network partition happens, each service can continue to operate within its own isolated step, ensuring the system stays available.
+
+2. **Eventual Consistency Instead of Immediate Consistency**:
+    - By using compensating transactions rather than strict locks or rollbacks, the Saga pattern ensures **eventual consistency** rather than strong consistency.
+    - This aligns with the CAP theorem’s AP configuration (Availability and Partition Tolerance), as the system remains operational and can tolerate partitions but may not be **immediately consistent**. Instead, consistency is achieved eventually, as compensating actions correct inconsistencies over time.
 
 
-## Implementing the SAGA Pattern
-
-Given these challenges, the SAGA pattern provides a framework for managing complex transactions in distributed systems by breaking them down into smaller, manageable sub-transactions. Each sub-transaction is executed independently, allowing for greater flexibility and resilience. If a sub-transaction fails, compensating transactions can be triggered to roll back the effects of previously completed steps, thus maintaining overall data consistency without the tight coupling and synchronous constraints of traditional distributed transactions.
+## The SAGA Pattern implementations
 
 Two primary approaches can be used to implement SAGA:
 
@@ -144,8 +177,6 @@ Two primary approaches can be used to implement SAGA:
   ![Orchestration Example](images/orchestration.webp)
 
 Both approaches aim to achieve data consistency across distributed services without relying on traditional ACID transactions. The choice between choreography and orchestration depends on the complexity and control requirements of the system.
-
-## Why is orchestration more widespread?
 
 ### Limitations of Choreography
 
