@@ -1,17 +1,6 @@
 # Distributed data management
 
-## Introduction
-
-The **SAGA pattern** is an architectural approach designed to manage complex, long-running transactions across distributed services, making it particularly valuable in microservices environments where a single, monolithic transaction is unfeasible.
-
-In a SAGA, transactions are broken down into a sequence of smaller, isolated steps:
-
-- Each step is managed by a separate microservice, often with its own database.
-- If any step fails, compensating transactions are triggered to undo previous operations, ensuring data consistency.
-
-In microservices architectures, maintaining traditional ACID (Atomicity, Consistency, Isolation, Durability) properties becomes challenging, especially for isolation, which prevents transactions from interfering with one another. This is due to each service having its own distributed data store. The SAGA pattern helps address these challenges by using countermeasures to minimize the impact of concurrency anomalies, providing a practical alternative to ACID transactions in distributed systems.
-
-### ACID Properties in Transactions
+## ACID Properties in Transactions
 
 The **ACID** properties—**Atomicity, Consistency, Isolation, and Durability**—define the reliability requirements for transactions in traditional database systems. These properties ensure that transactions are processed in a predictable, reliable manner, even in the event of system failures.
 
@@ -25,58 +14,97 @@ The **ACID** properties—**Atomicity, Consistency, Isolation, and Durability**�
 
 Together, these ACID properties are essential in maintaining data accuracy, consistency, and reliability in traditional, centralized databases, enabling them to handle complex, critical operations reliably. In distributed systems, however, achieving strict ACID properties becomes challenging, especially for Isolation, leading to the need for alternative approaches like the **SAGA Pattern** in microservices architectures.
 
-### Anomalies Caused by Lack of Isolation
+In a distributed system, achieving strict **isolation** across services and databases is challenging due to the decentralized nature of data and processing. Here’s an example illustrating why isolation is not guaranteed in a distributed context:
 
-In a distributed system with limited isolation, several anomalies can disrupt data consistency:
+## Example of a Faulty Transaction Due to Missing Isolation
 
-- **Lost Updates**: This anomaly occurs when one saga overwrites changes made by another saga without reading them first. This results in critical updates being lost, leading to inconsistent or incorrect data within the system.
+**Scenario**: Imagine an e-commerce platform that consists of several microservices, including an **Order Service**, a **Consumer Service**, a **Ticket Service**, and an **Accounting Service**. When a customer places an order, the Order Service needs to perform the following actions in a distributed transaction:
 
-- **Dirty Reads**: This issue arises when a saga reads data that is still being modified by another saga that hasn’t completed its transaction. Such reads can lead to decisions based on incomplete or incorrect data, potentially resulting in problems like exceeding credit limits or applying unauthorized changes.
+1. **Update the Consumer Service** to mark the consumer’s account as having a new order.
+2. **Create a ticket** in the Ticket Service for the purchased item.
+3. **Deduct the order amount** from the consumer's account in the Accounting Service.
 
-- **Fuzzy/Non-repeatable Reads**: This happens when different steps within the same saga read the same data but receive inconsistent results due to updates from another saga. This lack of stability can lead to unreliable outcomes in transaction processing.
-
-These anomalies highlight the challenges of maintaining data integrity in a distributed environment without strict isolation controls.
-
-### Addressing the Lack of Isolation in Saga Transactions
-
-In the saga model, transactions are **ACD-compliant** (Atomicity, Consistency, Durability) but lack **Isolation**, leading to possible anomalies that can affect business operations. To mitigate these issues, developers can employ several countermeasures:
-
-- **Semantic Lock**: This method involves placing a temporary flag on a record during a compensatable transaction to signal that the data may still change. This flag serves as either a hard lock, preventing other transactions from accessing the record, or a soft warning, advising caution for other transactions. The flag is removed once the saga completes (either through a successful retriable transaction or a compensating rollback).
-
-- **Commutative Updates**: Ensures that updates are designed to be executed in any order, meaning they are **commutative**. This reduces the potential impact of concurrent operations and helps maintain data consistency.
-
-- **Pessimistic View**: By reordering the steps in a saga, this countermeasure reduces business risks associated with dirty reads. Critical steps are sequenced to occur in a way that limits the effect of inconsistent data, reducing the likelihood of errors from concurrent transactions.
-
-- **Reread Value**: This method prevents dirty writes by verifying the data before making an update. If the data has been modified, the saga aborts and may restart. Acting as a type of **Optimistic Offline Lock**, this countermeasure ensures that the saga uses consistent data, minimizing conflicts or overwrites from other operations.
-
-- **Version File**: This technique logs each update to maintain the correct order of operations. By recording each transaction, the system can reorder actions to maintain sequence integrity. This countermeasure effectively transforms non-commutative actions into commutative ones, supporting data consistency even when transactions are processed out of order.
-
-- **By Value**: This approach dynamically selects a concurrency mechanism based on the business risk associated with each request. For low-risk actions, sagas with countermeasures may suffice. However, for high-risk transactions (e.g., financial transfers), distributed transactions ensure more rigorous consistency. This strategy allows a flexible balance between business risk, availability, and scalability.
-
-These countermeasures collectively help maintain data integrity and minimize concurrency anomalies in systems where strict isolation is unfeasible.
-
-
-## Why cannot we use a distributed transaction?
-
-Distributed transactions, managed through the X/Open Distributed Transaction Processing (DTP) Model and typically implemented with two-phase commit (2PC), ensure that all participants in a transaction either commit or roll back together. While this approach may seem straightforward, it has significant limitations.
-
-One major issue is that many modern technologies, including NoSQL databases like MongoDB and Cassandra, as well as modern message brokers like RabbitMQ and Apache Kafka, do not support distributed transactions. Additionally, distributed transactions are synchronous, meaning that all participating services must be available for the transaction to complete. This requirement reduces the overall availability of the system because the availability of the entire transaction is the product of the availability of each service involved. According to the CAP theorem, systems can only achieve two out of three properties: consistency, availability, and partition tolerance. Modern architectures often prioritize availability over consistency.
-
-Although distributed transactions offer a familiar programming model similar to local transactions, these challenges make them unsuitable for modern applications. Instead, to maintain data consistency in a microservices architecture, a different approach is needed one that leverages loosely coupled, asynchronous services. This is where the SAGA pattern comes into play.
+To maintain data consistency, the Order Service attempts to execute this transaction across the three services. The dashed box around these services indicates the need for data consistency when performing these operations. The figure emphasizes that the `createOrder()` operation must update data across several services, requiring a mechanism to maintain consistency.
 
 ![](images/transactions.webp)
 
-In the image there is an example of what we have mentioned at the beginning of the paragraph. It illustrates `createOrder()` operation in a microservices architecture. This operation involves multiple services and must ensure data consistency across them. The diagram shows the `Order Service`, `Consumer Service`, `Kitchen Service`, and `Accounting Service`, each represented by hexagons.
 
-- The `Order controller` initiates the `createOrder()` process.
-- The `Order Service` reads data from the `Consumer Service`, which manages consumer information.
-- The `Order Service` then writes data to both the `Kitchen Service`, which handles ticket information, and the `Accounting Service`, which manages account details.
 
-The dashed box around these services indicates the need for data consistency when performing these operations. The figure emphasizes that the `createOrder()` operation must update data across several services, requiring a mechanism to maintain consistency.
 
-### Implementing the SAGA Pattern
 
-To replace traditional distributed transactions, the **SAGA Pattern** offers a solution for coordinating transactions across services in a microservices architecture. Two primary approaches can be used to implement SAGA:
+#### Step-by-Step Breakdown of the Faulty Transaction
+
+1. **Initial Order Request**: A customer places an order for a concert ticket costing $100. The Order Service initiates a distributed transaction to update the Consumer, Ticket, and Accounting Services.
+
+2. **Consumer Service Update**:
+  - The Order Service updates the Consumer Service to reflect that the customer has placed a new order.
+  - This update successfully records the order in the consumer's profile.
+
+3. **Ticket Service Creation**:
+  - The Order Service sends a request to the Ticket Service to create a new ticket for the customer.
+  - This operation also succeeds, and the ticket is generated.
+
+4. **Accounting Service Deduction**:
+  - The Order Service attempts to deduct $100 from the consumer's account in the Accounting Service.
+  - Before this operation completes, a concurrent transaction occurs: the customer, unaware of the ongoing order process, decides to purchase another item for $50, leading the Accounting Service to deduct $50 from the same account.
+
+5. **Failure to Deduct**:
+  - When the Order Service finally processes the deduction of $100, it checks the consumer's account balance, which is now $50 (after the concurrent deduction).
+  - Since the balance is insufficient, the Accounting Service raises an error and rolls back the $100 deduction.
+
+6. **Inconsistent State**:
+  - At this point, we have an inconsistent state:
+    - The Consumer Service shows that an order has been placed.
+    - The Ticket Service has generated a ticket.
+    - The Accounting Service has not deducted the $100 for the order due to the insufficient balance.
+  - The system's state is now inconsistent because the order exists in the system, but the payment has not been processed.
+
+### Why Isolation Failed
+
+In this example, isolation failed for several reasons:
+
+- **Concurrent Modifications**: The lack of isolation allowed another transaction to modify the consumer's account balance while the Order Service was still processing the transaction. As a result, the Order Service was unable to accurately reflect the real-time state of the account.
+
+- **No Locking Mechanism**: The system did not implement any form of locking to prevent concurrent transactions from interfering with one another. This lack of locking leads to race conditions where multiple transactions access shared resources simultaneously without proper coordination.
+
+- **Error Propagation**: The failure in the Accounting Service did not trigger compensating actions in the previous services (Consumer and Ticket), leaving the overall system in an inconsistent state.
+
+
+## Anomalies Caused by Lack of Isolation
+
+Without adequate isolation, several read anomalies can occur, leading to inconsistent or unexpected results. The three primary types of read anomalies are **Dirty Reads**, **Non-Repeatable Reads**, and **Phantom Reads**.
+
+- **Dirty Reads**: This anomaly occurs when a transaction reads data that has been modified by another transaction but not yet committed. If the other transaction rolls back or fails, the data read by the first transaction becomes invalid. Dirty reads can lead to decisions based on data that might change, resulting in errors or inconsistencies.
+
+  *Example:* Transaction A updates a customer’s credit balance but hasn’t committed. Transaction B reads this uncommitted balance to approve a credit limit, but then Transaction A rolls back. As a result, Transaction B has made a decision based on incorrect information.
+
+- **Non-Repeatable Reads**: In this anomaly, a transaction reads the same data multiple times but receives different values because another transaction has modified the data in between reads. This inconsistency can cause issues when a transaction expects data to remain stable over its duration.
+
+  *Example:* Transaction A reads an account balance. Meanwhile, Transaction B modifies this balance and commits. When Transaction A reads the balance again, it sees a different value, leading to unexpected results if it assumes stability in the data.
+
+- **Phantom Reads**: Phantom reads occur when a transaction reads a set of rows that satisfy a certain condition, but another transaction inserts, updates, or deletes rows that affect the result set during the course of the first transaction. As a result, the first transaction sees different data when it re-executes the same query.
+
+  *Example:* Transaction A reads all accounts with a balance over $10,000. Simultaneously, Transaction B inserts a new account with a balance of $15,000 and commits. If Transaction A re-executes the query, it will include the new account, resulting in a different set of results or “phantom” rows.
+
+These read anomalies highlight the challenges in achieving consistent and isolated transaction behavior, especially in concurrent and distributed environments. Addressing them requires implementing appropriate isolation levels, such as **Serializable** or **Repeatable Read**, though strict isolation can affect system performance and scalability.
+
+
+## The X/Open Distributed Transaction Processing (DTP) Model
+
+**Distributed transactions**, managed through the **X/Open Distributed Transaction Processing (DTP) Model**, are designed to ensure that all participants in a transaction either commit or roll back their changes together. Typically implemented using the **two-phase commit (2PC)** protocol, this approach provides a familiar programming model that resembles local transactions. However, it comes with significant limitations that make it less suitable for modern applications:
+
+* Many contemporary technologies, including popular **NoSQL databases** like **MongoDB** and **Cassandra**, as well as modern messaging systems such as **RabbitMQ** and **Apache Kafka**, do not inherently support distributed transactions. This lack of support complicates the implementation of 2PC in environments where these technologies are prevalent. 
+* Distributed transactions are inherently **synchronous**. This means that all participating services must be available and responsive for the transaction to complete successfully. Consequently, the overall availability of the system is contingent upon the availability of each individual service involved in the transaction. This interdependence can significantly reduce system resilience. According to the **CAP theorem**, which states that a distributed system can only guarantee two out of the following three properties—**Consistency**, **Availability**, and **Partition Tolerance**—modern architectures frequently prioritize availability over strict consistency.
+
+
+
+
+
+## Implementing the SAGA Pattern
+
+Given these challenges, the SAGA pattern provides a framework for managing complex transactions in distributed systems by breaking them down into smaller, manageable sub-transactions. Each sub-transaction is executed independently, allowing for greater flexibility and resilience. If a sub-transaction fails, compensating transactions can be triggered to roll back the effects of previously completed steps, thus maintaining overall data consistency without the tight coupling and synchronous constraints of traditional distributed transactions.
+
+Two primary approaches can be used to implement SAGA:
 
 - **Choreography**: Here, each service involved in the saga performs its local transaction and then publishes an event to notify other services that the next step can begin. This approach is decentralized: each service reacts to events and performs its designated task. While this simplifies design by removing the need for a central controller, complexity can increase with more interactions, making the saga harder to track and manage.
 
