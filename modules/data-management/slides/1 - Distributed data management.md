@@ -151,34 +151,18 @@ The CAP theorem posits that a distributed system can only guarantee two out of t
 
 ## The SAGA Pattern
 
-The **Saga pattern** is a design pattern for managing long-running, distributed transactions. It breaks down a large transaction into a series of smaller, isolated steps (or "sagas"), each of which is a transaction in itself. If one step in the saga fails, compensating transactions (undo actions) are triggered to maintain the overall system's integrity. Sagas achieve eventual consistency rather than strict, immediate consistency. This makes them suitable for distributed systems where traditional transactions are impractical or too costly in terms of performance.
+The **Saga pattern** is a design pattern for managing long-running, distributed transactions. It breaks down a large transaction into a series of smaller, isolated steps (or "sagas"), each of which is a transaction in itself. If one step in the saga fails, compensating transactions (undo actions) are triggered to maintain the overall system's integrity. Sagas achieve eventual consistency rather than strict, immediate consistency. 
 
 The Saga pattern is relevant in the context of CAP theorem trade-offs because it offers a way to achieve **Availability** and **Partition Tolerance** (AP) with **eventual consistency** in distributed systems:
 
-1. **Partition Tolerance and Availability**:
-    - Sagas are designed to handle distributed, long-running transactions, allowing each step to commit independently. This ensures **Availability** and **Partition Tolerance** since each service in the transaction can operate independently and locally, even if other services are temporarily unavailable or network partitions occur.
-    - When using the Saga pattern, if a network partition happens, each service can continue to operate within its own isolated step, ensuring the system stays available.
-
-2. **Eventual Consistency Instead of Immediate Consistency**:
-    - By using compensating transactions rather than strict locks or rollbacks, the Saga pattern ensures **eventual consistency** rather than strong consistency.
-    - This aligns with the CAP theorem’s AP configuration (Availability and Partition Tolerance), as the system remains operational and can tolerate partitions but may not be **immediately consistent**. Instead, consistency is achieved eventually, as compensating actions correct inconsistencies over time.
+* Sagas are designed to handle distributed, long-running transactions, allowing each step to commit independently. This ensures **Availability** and **Partition Tolerance** since each service in the transaction can operate independently and locally, even if other services are temporarily unavailable or network partitions occur.
+* This aligns with the CAP theorem’s AP configuration (Availability and Partition Tolerance), as the system remains operational and can tolerate partitions but may not be **immediately consistent**. Instead, consistency is achieved eventually, as compensating actions correct inconsistencies over time.
 
 
 ## The SAGA Pattern implementations
 
-Two primary approaches can be used to implement SAGA:
-
-- **Choreography**: Here, each service involved in the saga performs its local transaction and then publishes an event to notify other services that the next step can begin. This approach is decentralized: each service reacts to events and performs its designated task. While this simplifies design by removing the need for a central controller, complexity can increase with more interactions, making the saga harder to track and manage.
-
-  ![Choreography Example](images/choreography.webp)
-
-- **Orchestration**: This approach relies on a centralized **saga orchestrator** to coordinate the transaction steps. The orchestrator sends commands to each service, instructing them to execute their part of the saga. If any step fails, the orchestrator initiates compensating actions to roll back prior steps, ensuring consistency. Orchestration provides better control and visibility, though it introduces a potential single point of failure and can make the orchestrator’s logic more complex.
-
-  ![Orchestration Example](images/orchestration.webp)
-
-Both approaches aim to achieve data consistency across distributed services without relying on traditional ACID transactions. The choice between choreography and orchestration depends on the complexity and control requirements of the system.
-
-### Limitations of Choreography
+### Choreography
+Each service involved in the saga performs its local transaction and then publishes an event to notify other services that the next step can begin. This approach is decentralized: each service reacts to events and performs its designated task. While this simplifies design by removing the need for a central controller, overall complexity usually increases making the saga harder to track and manage.
 
 - **Tight Coupling**: Services are directly connected, meaning changes in one service can impact others, complicating upgrades.
 - **Distributed State**: Managing state across microservices complicates process tracking and may require additional infrastructure.
@@ -186,7 +170,12 @@ Both approaches aim to achieve data consistency across distributed services with
 - **Testing Challenges**: Interconnected microservices make testing more complex for developers.
 - **Maintenance Difficulty**: As services evolve, adding new versions can reintroduce complexity, resembling a distributed monolith.
 
-### Advantages of Orchestration
+![Choreography Example](images/choreography.webp)
+
+
+
+### Orchestration
+A centralized **saga orchestrator** coordinates the transaction steps. The orchestrator sends commands to each service, instructing them to execute their part of the saga. If any step fails, the orchestrator initiates compensating actions to roll back prior steps, ensuring consistency. Orchestration provides better control and visibility, though it introduces a potential single point of failure and can make the orchestrator’s logic more complex.
 
 - **Coordinated Transactions**: A central coordinator manages the execution of microservices, ensuring consistent transactions across the system.
 - **Compensation**: Supports rollback through compensating transactions in case of failures, maintaining system consistency.
@@ -194,6 +183,9 @@ Both approaches aim to achieve data consistency across distributed services with
 - **Scalability**: Easily scale by adding or modifying services without major impact on the overall application.
 - **Visibility and Monitoring**: Centralized visibility enables quicker issue detection and resolution, improving system reliability.
 - **Faster Time to Market**: Simplifies service integration and flow creation, speeding up adaptation and reducing the time to market.
+
+![Orchestration Example](images/orchestration.webp)
+
 
 ## References
 

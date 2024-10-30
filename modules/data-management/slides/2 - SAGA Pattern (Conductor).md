@@ -2,88 +2,172 @@
 
 ## Project structure
 
-The final goal we want to reach in this project is the implementation of SAGA Pattern with Spring Boot. To do this, we need an example project composed of some microservices.  A typical example of a microservices architecture is e-commerce platforms where purchases can be made. Each microservice takes care of a particular task, and overall the system works cooperatively to keep data up-to-date and consistent. For this reason, the implemented project features a system composed of three microservices implemented with Spring Boot, each with a specific function, which together create a simplified version of an e-commerce site. The three microservices involved are:
+A common example of a microservices architecture is an e-commerce platform where users can make purchases. In such an architecture, each microservice is responsible for a specific task, working in coordination to ensure that data remains accurate and consistent across the system. This project implements a simplified e-commerce platform using three microservices built with Spring Boot, each serving a distinct role:
 
-- `warehouse-service`, which handle the products in the warehouse;
+- **`warehouse-service`**: Manages product inventory in the warehouse.
+- **`cart-service`**: Manages products added to the shopping cart.
+- **`purchase-service`**: Manages completed purchases.
 
-- `cart-service`, which handle the products in the cart;
+Since the SAGA pattern requires an orchestrator to handle distributed transactions, we’ve chosen **Conductor**, a lightweight orchestrator that can be easily deployed as a Docker container. Conductor provides an intuitive graphical interface, which allows us to define workflows, manage task invocations, and configure interactions between services. We will delve further into these capabilities as we proceed.
 
-- `purchase-service`, which handle the purchased products.
+In our implementation, each microservice has its own dedicated database for storing products information. The key class, shared among all three services, is `Product`:
 
-As previously said, SAGA Pattern needs an orchestrator. To simulate it, we will use **Conductor** because it is an orchestrator easily deployable via a Docker container and has an intuitive graphical interface. This interface allows us to define workflows, manage invocations, and configure the tasks. We will explore these aspects in more detail as we proceed.
+```java
+package com.nbicocchi.cart.persistence.model;
 
-In our implementation, each microservice has its own database able to store Products. Each product is stored with four attributes:
-- *id*: the auto generated primary key;
-- *code*: an unique attribute used as an alternative key;
-- *name*: the product name;
-- *description*: the product description.
+import jakarta.persistence.*;
+import lombok.*;
 
-The interaction with the database (*Postgres*) is handled by Java JPA to avoid the SQL writing.
+@Setter
+@Getter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString
+@NoArgsConstructor
+@Entity
+public class Product {
 
-Overall, we have an architecture consisting of three microservices, each with its associated database that stores product information, along with an orchestrator that will manage the interactions between them.
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(unique = true, nullable = false, updatable = false)
+    @EqualsAndHashCode.Include
+    private String code;
+    private String name;
+    private String description;
 
-## Conductor Overview
-
-**Conductor** is a workflow orchestration framework, developed by Netflix, that allows for managing complex processes within microservices architectures. Conductor enables the definition of workflows as a sequence of independent tasks, each executed by a different microservice, ensuring scalability, resilience, and control. With support for various programming languages and integration with numerous technologies, Conductor is ideal for automating and orchestrating distributed processes efficiently.
-
-In our context it is necessary to add dependencies in `pom.xml` to enable every interested microservices to interact with it:
-
-```html
-<dependency>
-    <groupId>com.netflix.conductor</groupId>
-    <artifactId>conductor-client</artifactId>
-    <version>3.8.1</version>
-</dependency>
-
-<dependency>
-    <groupId>com.netflix.conductor</groupId>
-    <artifactId>conductor-common</artifactId>
-    <version>3.8.1</version>
-</dependency>
+    public Product(String code, String name, String description) {
+        this.code = code;
+        this.name = name;
+        this.description = description;
+    }
+}
 ```
 
-The `conductor-client` dependency provides the client API for interacting with Netflix Conductor, a microservices orchestration framework. This library allows developers to create, manage, and execute workflows and tasks within Conductor from their Java applications. The `conductor-common` dependency contains shared components and utilities that are used across various Conductor modules. This includes common data models, utility classes, and configurations that are essential for building and integrating with Conductor. It is typically used in conjunction with the conductor-client to provide a consistent and reusable set of tools for working with Conductor workflows.
-
-
-## The workflow to implement
-
-To ensure that the orchestrator can manage transactions across each microservice's database and keep the data consistent, workflows must be defined. This allows the orchestrator to know how to handle the various situations that may arise.
-
-![](images/workflow.webp)
-
-We previously mentioned that our project aims to simulate an e-commerce platform, so every product (before the sale) must do some checks. For instance it is important to verify if a number of credit card is valid. The workflow previously shown represents the steps a product must go through before being sold. Essentially, a workflow in Conductor environment is an implementation of an activity diagram, consisting of a series of tasks to be executed in sequence. Specifically, our workflow want to represent the product sale process. It includes:
-
-1. Removing the product from the warehouse.
-
-2. Adding the product to the cart.
-
-3. Verifying the credit card number to decide whether to proceed with removing the item from the cart and completing the sale, or to simply keep the item in the cart if payment cannot be processed.
-
-Furthermore, it takes two parameters as input:
-
-- *productCode*: the primary key of the product;
-
-- *creditCard*: the credit card number that we want to use to pay.
-
-In this way, by executing the workflow, the databases remain consistently synchronized. For instance, if a product is to be purchased and the provided credit card number is valid, the final result is that the product is moved from the warehouse database to the purchases database.
+In summary, the architecture consists of three microservices, each with its own database to store product details, along with an orchestrator to manage interactions and ensure consistency across the platform.
 
 ## Docker configuration
 
-Before diving into the implementation details, it's helpful to review the Docker container configuration to get a clearer picture of the architecture. In our example, there are five containers:
+Before delving into implementation details, reviewing the Docker container configuration will help clarify the architecture:
 
-- **postgres**: This container manages the databases for the microservices. Although each of them should ideally have its own separate database, we simulate this by creating separate tables within a single Postgres container to simplify setup and reduce resource usage.
+- **postgres**: This container manages the databases for the microservices. While each microservice would ideally have its own database, we simulate this by creating separate tables within a single Postgres container to simplify the setup and reduce resource consumption.
 
-- **conductor**: This container runs the Conductor image, which is used for the orchestration task and to run the workflows. It is important to remember that it is the only container which expose 2 ports: `5000` to access at the UI and `8080` to allow the services to register their tasks.
+- **conductor**: This container runs the Conductor image, handling orchestration tasks and executing workflows. It is the only container that exposes two ports: port 5000 for accessing the UI and port 8080 for allowing services to register their tasks.
 
-- **cart**: This container hosts the `cart-service`.
+- **cart**: This container hosts the cart-service.
 
-- **warehouse**: This container hosts the `warehouse-service`.
+- **warehouse**: This container hosts the warehouse-service.
 
-- **purchase**: This container hosts the `purchase-service`.
+- **purchase**: This container hosts the purchase-service.
 
-## Workflow definition with Conductor
+```yaml
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: jdbc_schema
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d jdbc_schema" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-Once the theoretical aspects of the workflow are defined, including its tasks, input and output parameters, and so on, it's time to move on to the implementation using Conductor. Conductor uses a JSON file to define a workflow. It becomes a one-to-one translation of what was previously done with some more information treated as metadata. These ones are very important because they specify task lifecycle, how many times a task must be retried in case of fall and so on. The basic structure of the JSON file becomes as follows:
+  conductor:
+    image: orkesio/orkes-conductor-community-standalone:latest
+    init: true
+    ports:
+      - "8080:8080"
+      - "5000:5000"
+    volumes:
+      - redis:/redis
+      - postgres:/pgdata
+  
+  cart:
+    build: cart-service
+    mem_limit: 512m
+    ports:
+      - "9000:9000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  purchase:
+    build: purchase-service
+    mem_limit: 512m
+    ports:
+      - "9001:9001"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  warehouse:
+    build: warehouse-service
+    mem_limit: 512m
+    ports:
+      - "9002:9002"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pg-data:
+  pgadmin-data:
+  redis:
+  postgres:
+```
+
+
+## Conductor Overview
+
+**Conductor** is a workflow orchestration framework developed by Netflix that facilitates the management of complex processes within microservices architectures. Conductor enables workflows to be defined as a sequence of independent tasks, each handled by different microservices, which promotes scalability, resilience, and centralized control. With support for multiple programming languages and integration with a wide array of technologies, Conductor is well-suited for automating and orchestrating distributed processes efficiently.
+
+In our project, we need to add the necessary dependencies in each microservice’s `pom.xml` file to allow seamless interaction with Conductor:
+
+```xml
+<dependency>
+   <groupId>io.orkes.conductor</groupId>
+   <artifactId>orkes-conductor-client-spring</artifactId>
+   <version>4.0.0</version>
+</dependency>
+```
+
+## Workflow definition
+
+To ensure that the orchestrator can manage transactions across each microservice’s database and maintain data consistency, workflows need to be defined. This enables the orchestrator to handle various scenarios effectively.
+
+![](images/workflow.webp)
+
+The workflow diagram shown above outlines the steps a product must go through before being sold. In our project, designed to simulate an e-commerce platform, each product must pass certain checks prior to sale. For example, verifying the validity of a credit card number is crucial before completing a purchase. Essentially, a workflow in Conductor represents an activity diagram, structured as a sequence of tasks to be executed in order. Specifically, our workflow models the product sale process and includes the following steps:
+
+1. Removing the product from the warehouse.
+2. Adding the product to the cart.
+3. Verifying the credit card number to determine whether to proceed with removing the item from the cart and completing the sale, or to leave the item in the cart if payment cannot be processed.
+
+The workflow also takes two input parameters:
+
+- **productCode**: the primary key of the product.
+- **creditCard**: the credit card number intended for payment.
+
+By executing the workflow, we ensure consistent synchronization across databases. For example, if a product is purchased and the provided credit card number is valid, the workflow results in the product being transferred from the warehouse database to the purchases database.
+
+
+### Workflow definition (JSON)
+
+Once the theoretical aspects of the workflow are defined (including tasks, input and output parameters, and other details), implementation in Conductor can begin. Conductor uses a JSON file to define a workflow, which serves as a direct translation of the theoretical design, with additional information provided as metadata. This metadata is crucial, as it specifies aspects like the task lifecycle, retry limits in case of failures, and other essential configurations.
+
+The basic structure of the JSON file is as follows:
 
 ```text
 {
@@ -118,24 +202,25 @@ Once the theoretical aspects of the workflow are defined, including its tasks, i
 }
 ```
 
-Of course, there may be cases, as in our example, where more complex constructs are needed, involving the use of specific operators such as SWITCH, DO-WHILE, and others. For the specific syntax, you can refer to the [reference](https://conductor-oss.github.io/conductor/documentation/configuration/workflowdef/operators/index.html).
+In some cases, as in our example, more complex constructs are required, involving specific operators like `SWITCH`, `DO-WHILE`, and others. For details on the syntax, refer to the official Conductor reference.
 
-The complete implementation of our workflow is provided in the file `buy_product_workflow.json`.
+The full implementation of our workflow can be found in the file `buy_product_workflow.json`.
 
+## Task definition and implementation
 
-## Task definition with Conductor
+Each workflow consists of a set of tasks, and each task must be defined. To accomplish this, two main steps should be followed:
 
-Each workflow is composed of a set of task. Each of them must be defined. To do this, there are two main steps to follow:
+1. **Define Task Characteristics**: Use a JSON file to specify the attributes and configurations of each task.
 
-1. Define the task characteristics using a JSON file.
+2. **Implement Tasks in Java**: In the various microservices, implement the tasks by utilizing the [Worker](https://conductor-oss.github.io/conductor/devguide/how-tos/Workers/build-a-java-task-worker.html) interface from Conductor OSS.
 
-2. Implement the tasks in Java within the various microservices by implementing the [Worker](https://conductor-oss.github.io/conductor/devguide/how-tos/Workers/build-a-java-task-worker.html) interface from Conductor OSS.
+Following these steps ensures that each task is correctly defined and implemented, allowing the workflow to function seamlessly.
 
-### 1. Task Definition with JSON File
+### 1. Task definition (JSON)
 
-For each task, just like for each workflow, we need to define not only the name but also any associated **metadata**. These typically follow a standard configuration that doesn’t require many modification. Below it is reported an example that corresponds to the `check_credit_card` task in our workflow:
+For each task, as with each workflow, it is essential to define not only the name but also any associated **metadata**. This metadata typically adheres to a standard configuration that requires minimal modifications. Below is an example corresponding to the `check_credit_card` task in our workflow:
 
-```text
+```json
 {
   "createdBy": "",
   "updatedBy": "",
@@ -163,7 +248,7 @@ For each task, just like for each workflow, we need to define not only the name 
 
 The JSON files for each task present in the considered microservice can be found in the `/resources/task` directory.
 
-### 2. Java implementation
+### 2. Task implementation (Java)
 When it comes to defining the task in Java, we simply need to implement a class following this structure:
 
 ```java
@@ -213,53 +298,57 @@ It is also necessary to instantiate the Worker when the service starts. So, ever
 
 ```java
 @SpringBootApplication
-public class CartSetupApp implements ApplicationRunner {
-    // ....
+public class App implements ApplicationRunner {
+   private static final Logger LOG = LoggerFactory.getLogger(App.class);
+   private final ProductRepository productCartRepository;
 
-    public static void main(final String... args) {
-        SpringApplication.run(CartSetupApp.class, args);
-    }
+   public App(ProductRepository productCartRepository) {
+      this.productCartRepository = productCartRepository;
+   }
 
-    @Override
-    public void run(ApplicationArguments args) throws Exception {
-        TaskClient taskClient = new TaskClient();
-        taskClient.setRootURI("http://conductor:8080/api/"); // Point this to the server API
+   public static void main(final String... args) {
+      SpringApplication.run(App.class, args);
+   }
 
-        int threadCount = 1; // number of threads used to execute workers.  To avoid starvation, should be
-        Worker worker = new CreditCardWorker("check_credit_card");
-        // ...
+   @Override
+   public void run(ApplicationArguments args) {
+      TaskClient taskClient = new TaskClient();
+      taskClient.setRootURI("http://conductor:5000/api/"); // Point this to the server API
 
-        Collection workerArrayList = new ArrayList<Worker>();
-        workerArrayList.add(worker);
-        // ...
+      Worker worker1 = new CartInsertWorker("insert_product_in_the_cart", productCartRepository);
+      Worker worker2 = new CreditCardWorker("check_credit_card");
+      Worker worker3 = new CartDeleteWorker("cart_delete_product", productCartRepository);
+      List<Worker> workerArrayList = new ArrayList<>(List.of(worker1, worker2, worker3));
 
-        TaskRunnerConfigurer configurer =
-                new TaskRunnerConfigurer.Builder(taskClient, workerArrayList)
-                        .withThreadCount(threadCount)
-                        .build();
-        // Start the polling and execution of tasks
-        configurer.init();
-    }
+      // Start the polling and execution of tasks
+      int threadCount = 1; // number of threads used to execute workers.  To avoid starvation, should be
+      TaskRunnerConfigurer configurer =
+              new TaskRunnerConfigurer.Builder(taskClient, workerArrayList)
+                      .withThreadCount(threadCount)
+                      .build();
+      configurer.init();
+   }
 }
 ```
 
 
-## How to execute the workflow with Docker
+## Trying out the ecosystem
 
 Now that we have defined the workflow (both theoretically and practically), as well as the tasks and written the code to manage the JPA `@Entity` classes, we can move on to see how to actually execute the workflow (the database implementation isn't treated in this notebook because it is already known - see JPA reference or the project code).
 
 For first, it is necessary to generate the .jar files to start Docker:
+
 ```sh
-$ mvn clean package
+$ mvn clean package -Dmaven.test.skip=true
 $ docker compose build
-$ docker compose up
+$ docker compose up --detach
 ```
 At this point navigate to
-[http://localhost:1234/](http://localhost:1234/): here there is the **Conductor UI** as shown in the image below.
+[http://localhost:5000/](http://localhost:5000/): here there is the **Conductor UI** as shown in the image below.
 
 ![](images/conductor-ui.webp)
 
-At the firt access, we need to save the workflow and tasks definitions. To do this click on *Definitions* and then on *New Workflow Definition* and *New Task Defintion*. The only things to do is copy and paste the JSON files defined before and click *Save*. See the image below:
+At the firt access, we need to save the workflow and tasks definitions. To do this click on *Definitions->Workflows->New Workflow Definition* and *Definitions->Tasks->New Task Defintion*. The only things to do is copy and paste the JSON files defined before and click *Save*. See the image below:
 
 ![](images/def-workflow.webp)
 
@@ -299,40 +388,13 @@ In our case, there are three main cases we can run to verify how workflow works:
 
 For the first case, we will see that the workflow successed moving the product "P7" from the warehouse product tablet to the purchase product table. For the second case, the product "P7" remains in cart product table because the credit card is invalid. In the end, in the third case the workflow failed.
 
-## How can to see the execution results
+### How to see the execution results
 
 In Conductor UI there is also another section called ***Executions***. Inside it is possible to see the results of every workflow executed and analyze the input/output parameters. It is very useful for debugging stuff.
 
 ![](images/executions.webp)
 
-## How to check the elements in the database
-
-Since the SAGA Pattern allows for managing elements in the database, it's important to note that the project dependencies include the H2 database:
-
-```html
-<dependency>
-    <groupId>com.h2database</groupId>
-    <artifactId>h2</artifactId>
-</dependency>
-```
-
-This provides a user-friendly graphical interface to query the implemented Postgres database. From the desired service, simply navigate to the URI `/h2-console` and enter the desired SQL in the appropriate field.
-
-## Run Services without Docker
-
-In this case, Conductor runs on Docker, but the services run locally. There is only one thing to remember: we have to change the Conductor url. So, the only line of code to change is the following one:
-
-```text
-taskClient.setRootURI("http://conductor:8080/api/");
-```
-and must be rewrite with:
-
-```text
-taskClient.setRootURI("http://localhost:8080/api/");
-```
-The rest of execution remains unchanged.
-
-## Execute a workflow with ***curl***
+### Execute a workflow with curl
 
 In Netflix Conductor, you can trigger the execution of a workflow not only through the Conductor UI but also via an HTTP request. This capability allows you to programmatically start workflows, making it easier to integrate Conductor into automated processes or other applications.
 
