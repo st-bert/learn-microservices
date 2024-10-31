@@ -59,6 +59,8 @@ Java Virtual Threads, introduced as part of **Project Loom**, offer an alternati
 | **Performance**           | High throughput for I/O-bound workloads                | Good performance with easier coding patterns         |
 
 
+
+
 ## Understanding the Importance of Resiliency
 When it comes to building resilient systems, most software engineers only take into account the complete failure of a piece of infrastructure or critical service. **They focus on building redundancy into each layer of their application** using techniques such as:
 * clustering key servers
@@ -68,15 +70,15 @@ When it comes to building resilient systems, most software engineers only take i
 However, when a service is running slow, detecting that poor performance and routing around it is often difficult:
 * Service degradation can start out as intermittent and then build momentum. Service degradation might also occur only in small bursts. **The first signs of failure might be a small group of users complaining about a problem until, suddenly, the application container exhausts its thread pool and collapses completely.**
 * Calls to remote services are usually synchronous and imply a wait for the service to return. **The caller has no concept of a timeout to keep the service call from hanging.**
-* **Applications are often designed to deal with complete failures of remote resources, not partial degradations**. Often, as long as the service has not entirely failed, an application will continue to call a poorly behaving service and won’t fail fast. In this case, the calling service is at risk of crashing because of resource exhaustion. 
+* **Applications are often designed to deal with complete failures of remote resources, not partial degradations**. Often, as long as the service has not entirely failed, an application will continue to call a poorly behaving service and won’t fail fast. In this case, the calling service is at risk of crashing because of resource exhaustion.
 
-What’s insidious about problems caused by **poorly performing remote services is that they are not only difficult to detect but can trigger a cascading effect (callers might exhaust their thread pools!) that can ripple throughout an entire application ecosystem**. Without safeguards in place, a single, poorly performing service can quickly take down entire applications. 
+What’s insidious about problems caused by **poorly performing remote services is that they are not only difficult to detect but can trigger a cascading effect (callers might exhaust their thread pools!) that can ripple throughout an entire application ecosystem**. Without safeguards in place, a single, poorly performing service can quickly take down entire applications.
 
 ### A real-world story
 
 ![](images/why-resiliency-matters.webp)
 
-In the scenario above, three applications are communicating in one form or another with three different services. Applications A and B communicate directly with the licensing service. The licensing service retrieves data from a database and calls the organization service to do some work for it. 
+In the scenario above, three applications are communicating in one form or another with three different services. Applications A and B communicate directly with the licensing service. The licensing service retrieves data from a database and calls the organization service to do some work for it.
 
 The organization service retrieves data from a completely different database platform and calls out to another service, the inventory service, from a third-party cloud provider, whose service relies heavily on an internal Network Attached Storage (NAS) device to write data to a shared filesystem. Application C directly calls the inventory service.
 
@@ -84,13 +86,23 @@ Over the weekend, a network administrator made what they thought was a small twe
 
 The developers who wrote the organization service never anticipated slowdowns occurring with calls to the inventory service. They wrote their code so that the writes to their database and the reads from the service occur within the same transaction. When the inventory service starts running slowly, not only does the thread pool for requests to the inventory service start backing up, the number of database connections in the service container’s connection pools becomes exhausted. These connections were held open because the calls to the inventory service never completed.
 
-Now the licensing service starts running out of resources because it’s calling the organization service, which is running slow because of the inventory service. Eventually, all three applications stop responding because they run out of resources while waiting for the requests to complete.
+Now the licensing service starts running out of resources because it’s calling the organization service, which is running slow because of the inventory service. Eventually, all three services stop responding because they run out of resources while waiting for the requests to complete.
 
-### Resiliency key features
-* **Enhanced User Experience**: Resilient applications continue functioning and serving users even when failures occur, ensuring a seamless user experience.
-* **Business Continuity**: By handling failures gracefully, resilient applications ensure business continuity and minimize the impact of disruptions on critical operations.
-* **Scalability and Performance**: Resilient applications are designed to scale and handle varying loads, enabling them to meet user demands efficiently.
-* **System Stability**: Resilient systems are better equipped to recover from failures, reducing downtime and enhancing overall system stability.
+### State of Resilience 2025 Survey
+The [State of Resilience 2025 Survey](https://www.cockroachlabs.com/guides/the-state-of-resilience-2025/) conducted among 1,000 senior cloud architects, engineers, and technology executives across North America, EMEA, and APAC showed:
+
+* **Widespread Operational Weaknesses**: 95% of executives are aware of existing operational weaknesses that leave their organizations vulnerable to financial and operational damage from unplanned outages. Nearly half (48%), however, admit their companies’ efforts are insufficient to address these issues.
+
+* **High Cost of Service Disruption**: All surveyed organizations reported suffering outage-related revenue loss over the last twelve months, with 84% losing at least $10,000. One-third indicated that their per-outage revenue loss ranged from $100,000 to $1,000,000 or more, highlighting the severe economic consequences when resilience measures fall short.
+
+* **Frequent Outages are the New Normal**: Organizations reported experiencing 86 outages annually on average, with 55% experiencing disruptions at least once a week. Notably, 70% of large enterprises said their outages typically take 60 minutes or more to resolve – and almost half experienced downtime for two hours or more.
+
+* **Internal and External Consequences**: The impact of unplanned outages goes far beyond financial losses; they also erode the confidence of consumers and business partners, and damage internal trust in IT teams. Even worse, frequent outages accelerate employee burnout, as 39% of respondents reported increased workloads from missed deadlines and accumulated requests.
+
+* **Spotty Preparation**: Just one in three executives claimed their organizations have an organized approach to responding to downtime, and fewer than one-third conduct any failover testing. This lack of preparation exposes organizations to further risks while reinforcing the need for enhanced resilience strategies.
+
+* **Overdue Investments in Resilience**: Overwhelmingly, participants stated a need for investment in operational resilience, especially in automation and AI-driven solutions (49%) and cloud infrastructure services (49%). These investments reflect a forward-looking mindset as organizations recognize the growing importance of AI in disaster prevention and outage recovery capabilities.
+
 
 ## Client-side resiliency patterns
 **Client-side resiliency software patterns focus on protecting a client of a remote resource (another microservice call or database lookup) from crashing when the remote resource fails because of errors or poor performance**. These patterns allow the client to fail fast and not consume valuable resources, such as database connections and thread pools. 
