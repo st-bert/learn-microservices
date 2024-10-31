@@ -2,7 +2,7 @@
   "createdBy": "",
   "updatedBy": "",
   "name": "delete_warehouse_product",
-  "description": "Delete warehouse item",
+  "description": "Deletes a product from the warehouse",
   "retryCount": 3,
   "timeoutSeconds": 1200,
   "inputKeys": [
@@ -18,7 +18,7 @@
   "inputTemplate": {},
   "rateLimitPerFrequency": 0,
   "rateLimitFrequencyInSeconds": 1,
-  "ownerEmail": "yes.in.a.jiffy@gmail.com",
+  "ownerEmail": "nbicocchi@unimore.it",
   "backoffScaleFactor": 1
 }
 

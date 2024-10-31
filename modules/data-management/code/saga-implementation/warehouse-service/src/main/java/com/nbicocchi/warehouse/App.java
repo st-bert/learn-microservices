@@ -1,7 +1,7 @@
 package com.nbicocchi.warehouse;
 
 import com.nbicocchi.warehouse.persistence.repository.ProductRepository;
-import com.nbicocchi.warehouse.worker.DeleteProductFromWarehouseProduct;
+import com.nbicocchi.warehouse.worker.DeleteProductWorker;
 import com.netflix.conductor.client.automator.TaskRunnerConfigurer;
 import com.netflix.conductor.client.http.TaskClient;
 import com.netflix.conductor.client.worker.Worker;
@@ -33,7 +33,7 @@ public class App implements ApplicationRunner {
         TaskClient taskClient = new TaskClient();
         taskClient.setRootURI("http://conductor:5000/api/"); // Point this to the server API
 
-        Worker worker1 = new DeleteProductFromWarehouseProduct("delete_warehouse_product", productWarehouseRepository);
+        Worker worker1 = new DeleteProductWorker("delete_warehouse_product", productWarehouseRepository);
         List<Worker> workerArrayList = new ArrayList<>(List.of(worker1));
 
         // Start the polling and execution of tasks

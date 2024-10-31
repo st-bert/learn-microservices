@@ -9,15 +9,15 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Optional;
 
-public class DeleteProductFromWarehouseProduct implements Worker {
+public class DeleteProductWorker implements Worker {
 
     private final String taskDefName;
-    private final ProductRepository productWarehouseRepository;
+    private final ProductRepository productRepository;
 
-    public DeleteProductFromWarehouseProduct(@Value("taskDefName") String taskDefName,  ProductRepository productWarehouseRepository) {
+    public DeleteProductWorker(@Value("taskDefName") String taskDefName, ProductRepository productRepository) {
         System.out.println("TaskDefName: " + taskDefName);
         this.taskDefName = taskDefName;
-        this.productWarehouseRepository = productWarehouseRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -30,13 +30,13 @@ public class DeleteProductFromWarehouseProduct implements Worker {
         TaskResult result = new TaskResult(task);
         String code = (String) task.getInputData().get("productCode");
 
-        Optional<Product> productWarehouse = productWarehouseRepository.findByCode(code);
+        Optional<Product> productWarehouse = productRepository.findByCode(code);
 
         if (productWarehouse.isPresent()) {
             Product product = productWarehouse.get();
             result.addOutputData("name", product.getName());
             result.addOutputData("description", product.getDescription());
-            productWarehouseRepository.delete(product);
+            productRepository.delete(product);
             System.out.println("Delete product from warehouse");
             result.setStatus(TaskResult.Status.COMPLETED);
         } else {

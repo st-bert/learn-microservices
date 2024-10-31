@@ -9,12 +9,12 @@ import org.springframework.beans.factory.annotation.Value;
 
 public class CartInsertWorker implements Worker {
     private final String taskDefName;
-    private final ProductRepository productCartRepository;
+    private final ProductRepository productRepository;
 
-    public CartInsertWorker(@Value("taskDefName") String taskDefName, ProductRepository productCartRepository) {
+    public CartInsertWorker(@Value("taskDefName") String taskDefName, ProductRepository productRepository) {
         System.out.println("TaskDefName: " + taskDefName);
         this.taskDefName = taskDefName;
-        this.productCartRepository = productCartRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class CartInsertWorker implements Worker {
         System.out.println("Description: " + description);
 
         Product product = new Product(code, name, description);
-        productCartRepository.save(product);
+        productRepository.save(product);
         System.out.println("Add product to chart db");
         result.setStatus(TaskResult.Status.COMPLETED);
         return result;

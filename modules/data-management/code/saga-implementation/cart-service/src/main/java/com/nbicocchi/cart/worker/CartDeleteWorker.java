@@ -12,12 +12,12 @@ import java.util.Optional;
 public class CartDeleteWorker implements Worker {
 
     private final String taskDefName;
-    private final ProductRepository productCartRepository;
+    private final ProductRepository productRepository;
 
     public CartDeleteWorker(@Value("taskDefName") String taskDefName, ProductRepository productWarehouseRepository) {
         System.out.println("TaskDefName: " + taskDefName);
         this.taskDefName = taskDefName;
-        this.productCartRepository = productWarehouseRepository;
+        this.productRepository = productWarehouseRepository;
     }
 
     @Override
@@ -30,14 +30,14 @@ public class CartDeleteWorker implements Worker {
         TaskResult result = new TaskResult(task);
         String code = (String) task.getInputData().get("productCode");
 
-        Optional<Product> productWarehouse = productCartRepository.findByCode(code);
+        Optional<Product> productWarehouse = productRepository.findByCode(code);
 
         if(productWarehouse.isPresent()) {
             Product product = productWarehouse.get();
             result.addOutputData("name", product.getName());
             result.addOutputData("description", product.getDescription());
 
-            productCartRepository.delete(product);
+            productRepository.delete(product);
 
             System.out.println("Delete product from warehouse");
             result.setStatus(TaskResult.Status.COMPLETED);

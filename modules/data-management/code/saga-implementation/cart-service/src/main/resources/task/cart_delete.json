@@ -1,7 +1,7 @@
 {
   "createdBy": "",
   "updatedBy": "",
-  "name": "cart_delete_product",
+  "name": "cart_delete",
   "description": "Delete product from the cart",
   "retryCount": 3,
   "timeoutSeconds": 1200,
@@ -18,7 +18,7 @@
   "inputTemplate": {},
   "rateLimitPerFrequency": 0,
   "rateLimitFrequencyInSeconds": 1,
-  "ownerEmail": "yes.in.a.jiffy@gmail.com",
+  "ownerEmail": "nbicocchi@unimore.it",
   "backoffScaleFactor": 1
 }
 
