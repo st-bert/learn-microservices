@@ -112,10 +112,20 @@ Although 2PC is useful to implement a distributed transaction, it has the follow
 * The two-phase commit protocol is slow by design due to the chattiness and dependency on the coordinator. So, it can lead to scalability and performance issues in a microservice-based architecture involving multiple services. 
 * Two-phase commit protocol is not supported in NoSQL databases. Therefore, in a microservice architecture where one or more services use NoSQL databases, we can't apply a two-phase commit.
 
+### Two-Phase Commit (2PC) and CAP Theorem
+
+2PC aligns with CP in the CAP theorem, prioritizing Consistency and Partition Tolerance over Availability. It is suitable for systems where strong consistency is crucial and where network reliability is high, such as financial systems or databases requiring strict data integrity.
+
+* **Consistency (C)**: 2PC ensures that all participants in a transaction have a consistent state by coordinating a commit or rollback across all nodes. All nodes either commit the transaction or roll it back, achieving atomicity and ensuring data consistency at the expense of availability.
+
+* **Availability (A)**: Because 2PC requires each participant to wait for all others to reach a decision, it is inherently blocking. In the event of a failure or timeout, nodes may be left in an uncertain state, which can limit availability. During a network partition, if the coordinator or any participant is unavailable, 2PC will block the transaction, reducing availability in favor of consistency.
+
+* **Partition Tolerance (P)**: 2PC does not handle network partitions well, as the protocol relies on synchronous responses from all participants. A network failure during the transaction can leave nodes in a blocked or uncertain state. Consequently, 2PC does not prioritize partition tolerance and struggles to function effectively in environments where partitions are common.
+
 
 ## The Saga Architecture Pattern
 
-The Saga architecture pattern provides transaction management using a sequence of local transactions.
+The Saga pattern, [introduced in 1987 by Hector Garcia Molina & Kenneth Salem](https://www.cs.cornell.edu/andru/cs711/2002fa/reading/sagas.pdf), defines a saga as a sequence of transactions that can be interleaved with one another.
 
 * A local transaction is the unit of work performed by a Saga participant. 
 * Every operation that is part of the Saga can be rolled back by a compensating transaction.
@@ -123,11 +133,22 @@ The Saga architecture pattern provides transaction management using a sequence o
 
 In the Saga pattern, a compensating transaction must be *idempotent* and *retryable*. These two principles ensure that we can manage transactions without any manual intervention.
 
-The Saga Execution Coordinator (SEC) guarantees these principles:
-
 ![saga pattern](https://www.baeldung.com/wp-content/uploads/sites/4/2021/04/saga-pattern.png)
 
-The above diagram shows how to visualize the Saga pattern for the online order processing scenario we discussed earlier.
+
+### Saga Pattern and CAP Theorem
+
+The Saga pattern aligns with **AP** in the CAP theorem, favoring **Availability** and **Partition Tolerance** while accepting **eventual consistency**. It is ideal for systems where high availability and partition tolerance are priorities, and where eventual consistency is acceptable, such as e-commerce order processing, travel bookings, and other long-running workflows.
+
+- **Consistency (C)**: Sagas achieve **eventual consistency** rather than strong consistency. If a failure occurs during one of the steps, compensating transactions are executed to reverse the effects of previous steps. While this approach ensures that the system will reach a consistent state eventually, it does not guarantee immediate consistency across all nodes.
+
+- **Availability (A)**: Sagas are non-blocking, allowing other parts of the system to proceed even if some steps are still being executed or a step fails. In a network partition, steps can continue on available nodes, improving the system's availability compared to 2PC.
+
+- **Partition Tolerance (P)**: The Saga pattern is well-suited for partition tolerance since it does not require synchronous communication across all nodes. Steps in a Saga can be executed asynchronously, and nodes do not need to coordinate a global commit. This enables the system to handle partitions gracefully, with compensating actions mitigating inconsistencies after the partition is resolved.
+
+
+
+
 
 ### The Saga Execution Coordinator
 
