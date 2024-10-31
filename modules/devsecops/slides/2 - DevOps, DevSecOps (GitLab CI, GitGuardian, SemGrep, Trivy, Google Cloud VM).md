@@ -1,4 +1,4 @@
-# DevOps, DevSecOps & Pre-commit hooks (GitLab CI, GitGuardian, SemGrep, Trivy, Google Cloud VM)
+# DevOps, DevSecOps (GitLab CI, GitGuardian, SemGrep, Trivy, Google Cloud VM)
 
 ## Introduction
 
@@ -10,9 +10,9 @@ The entire code will be finally publish inside a **Google Cloud VM** in the depl
 
 ## GitLab CI
 
-In order to complete all the required fundamentals of full CI/CD, many CI platforms rely on integrations with other tools to fulfill those needs. Many organizations have to maintain costly and complicated toolchains in order to have full CI/CD capabilities. This often means maintaining a separate SCM like Bitbucket or GitHub, and connecting to a separate testing tool that connects to their CI tool, that connects to a deployment tool like **Chef** or **Puppet**, that also connects to various security and monitoring tools.
+To achieve the complete fundamentals of full CI/CD, many CI platforms rely on integrations with various tools to meet these needs. This often leads organizations to maintain complex and costly toolchains to enable comprehensive CI/CD capabilities. Typically, this requires managing a separate source control management (SCM) system like Bitbucket or GitHub, linking it to a distinct testing tool, which then connects to a CI tool, that interfaces with a deployment tool like Chef or Puppet, while also integrating with multiple security and monitoring solutions.
 
-Instead of just focusing on building great software, organizations have to also maintain and manage a complicated toolchain. GitLab is a single application for the entire DevSecOps lifecycle, meaning it fulfill **all the fundamentals** for CI/CD in **one environment**.
+As a result, organizations find themselves focused not just on building great software but also on managing and maintaining a complicated toolchain. In contrast, GitLab offers a unified solution for the entire DevSecOps lifecycle, providing all the essential CI/CD functionalities within a single application. This streamlines processes, reduces complexity, and allows teams to concentrate on delivering high-quality software.
 
 In order to build a new GitLab pipeline, we need to create a **.gitlab-ci.yml** file with the list of all stages in order.
 
@@ -20,9 +20,9 @@ In order to build a new GitLab pipeline, we need to create a **.gitlab-ci.yml** 
 touch .gitlab-ci.yml
 ```
 
-We can configure a **default** image and service that will run ours task inside a stage.
+We can configure a **default** image that will run our tasks inside each stage.
 
-By default we will use the **docker:latest** image with the **docker:dind** service that allow us to use the docker command inside a container. It is usefull in order to **push** our container image into a **container registry**.
+By default, we will use the **docker:latest** image with the **docker:dind** service that allow us to use the docker command inside a container. This is useful in order to **push** our container image into a **container registry**.
 
 ```yml
 image: docker:latest
@@ -30,7 +30,7 @@ services:
   - docker:dind
 ```
 
-After that we can define of which stages are composed our pipeline:
+After that, we can define the stages that comprise our pipeline:
 
 ```yml
 stages:
@@ -42,11 +42,11 @@ stages:
   - Deploy
 ```
 
-We can now define tasks that will run on each stages.
+We can now define the tasks that will execute in each stage.
 
-All tasks in the same stage will run in **parallel**.
+All tasks within the same stage will run in **parallel**.
 
-For now, we will only define the task for the **Build** stage and for **Package** stage:
+For now, we will focus on defining tasks for the **Build** stage and the **Package** stage:
 
 ```yml
 🛠️ Build:
@@ -72,13 +72,11 @@ For now, we will only define the task for the **Build** stage and for **Package*
     - docker push $CI_REGISTRY_IMAGE --all-tags
 ```
 
-Inside the **Build** stage, we will build all application's artifacts that we will use it, in the **Package** stage, to build the new container image of the microservice and push it inside the **GitLab Container Registry**.
+Within the **Build** stage, we will compile all the application's artifacts that will be utilized in the **Package** stage to create the new container image for the microservice and push it to the **GitLab Container Registry**.
 
-We can set the **only** tag, in order to specify in which branch this task will be applied.
-We can also use **regex** rules to specify the name of the branch.
+We can use the **only** tag to specify the branches where this task will be applied. Additionally, we can employ **regex** rules to define the branch names.
 
-In our case we will use this tag for **build**, **package** and **deploy** stage.
-We want to publish only **stable** version of our code.
+In our scenario, we will apply this tag to the **build**, **package**, and **deploy** stages. Our goal is to publish only **stable** versions of our code.
 
 ## Lint Stage
 
