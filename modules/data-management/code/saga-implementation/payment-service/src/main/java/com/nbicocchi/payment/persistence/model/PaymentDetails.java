@@ -3,26 +3,28 @@ package com.nbicocchi.payment.persistence.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Setter
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
 @NoArgsConstructor
 @Entity
-public class Product {
+public class PaymentDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(unique = true, nullable = false, updatable = false)
     @EqualsAndHashCode.Include
-    private String code;
-    private String name;
-    private String description;
+    private String orderId;
+    private LocalDateTime createdAt;
+    private Boolean success;
 
-    public Product(String code, String name, String description) {
-        this.code = code;
-        this.name = name;
-        this.description = description;
+    public PaymentDetails(String orderId, Boolean success) {
+        this.orderId = orderId;
+        this.createdAt = LocalDateTime.now();
+        this.success = success;
     }
 }

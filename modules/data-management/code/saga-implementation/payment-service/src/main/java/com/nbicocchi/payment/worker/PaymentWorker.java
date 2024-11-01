@@ -5,11 +5,11 @@ import com.netflix.conductor.common.metadata.tasks.Task;
 import com.netflix.conductor.common.metadata.tasks.TaskResult;
 import org.springframework.beans.factory.annotation.Value;
 
-public class CreditCardWorker implements Worker {
+public class PaymentWorker implements Worker {
 
     private final String taskDefName;
 
-    public CreditCardWorker(@Value("taskDefName") String taskDefName) {
+    public PaymentWorker(@Value("taskDefName") String taskDefName) {
         System.out.println("TaskDefName: " + taskDefName);
         this.taskDefName = taskDefName;
     }

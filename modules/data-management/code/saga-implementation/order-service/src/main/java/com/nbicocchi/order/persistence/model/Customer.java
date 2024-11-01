@@ -21,4 +21,9 @@ public class Customer {
     @Column(unique = true)
     private String cardNumber;
 
+    public Customer(String socialSecurity, String name, String cardNumber) {
+        this.socialSecurity = socialSecurity;
+        this.name = name;
+        this.cardNumber = cardNumber;
+    }
 }

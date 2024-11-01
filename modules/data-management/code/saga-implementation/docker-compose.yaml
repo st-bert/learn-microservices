@@ -14,8 +14,8 @@ services:
       timeout: 10s
       retries: 5
 
-  cart:
-    build: cart-service
+  order:
+    build: order-service
     mem_limit: 512m
     ports:
       - "9000:9000"
@@ -25,8 +25,8 @@ services:
       conductor:
         condition: service_healthy
 
-  purchase:
-    build: purchase-service
+  payment:
+    build: payment-service
     mem_limit: 512m
     ports:
       - "9001:9001"
@@ -36,8 +36,8 @@ services:
       conductor:
         condition: service_healthy
 
-  warehouse:
-    build: warehouse-service
+  inventory:
+    build: inventory-service
     mem_limit: 512m
     ports:
       - "9002:9002"
