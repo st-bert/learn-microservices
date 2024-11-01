@@ -1,21 +1,4 @@
 services:
-  postgres:
-    image: postgres:latest
-    restart: always
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: jdbc_schema
-    volumes:
-      - pg-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U user -d jdbc_schema" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   conductor:
     image: orkesio/orkes-conductor-community-standalone:latest
     init: true
@@ -25,6 +8,11 @@ services:
     volumes:
       - redis:/redis
       - postgres:/pgdata
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   cart:
     build: cart-service
@@ -34,7 +22,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
-      postgres:
+      conductor:
         condition: service_healthy
 
   purchase:
@@ -45,7 +33,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
-      postgres:
+      conductor:
         condition: service_healthy
 
   warehouse:
@@ -56,11 +44,9 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
-      postgres:
+      conductor:
         condition: service_healthy
 
 volumes:
-  pg-data:
-  pgadmin-data:
   redis:
   postgres:

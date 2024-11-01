@@ -13,7 +13,7 @@ Since the SAGA pattern requires an orchestrator to handle distributed transactio
 In our implementation, each microservice has its own dedicated database for storing products information. The key class, shared among all three services, is `Product`:
 
 ```java
-package com.nbicocchi.cart.persistence.model;
+package com.nbicocchi.payment.persistence.model;
 
 import jakarta.persistence.*;
 import lombok.*;

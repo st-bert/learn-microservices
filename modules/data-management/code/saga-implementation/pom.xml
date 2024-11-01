@@ -10,9 +10,9 @@
 	<packaging>pom</packaging>
 
 	<modules>
-		<module>cart-service</module>
-		<module>purchase-service</module>
-		<module>warehouse-service</module>
+		<module>order-service</module>
+		<module>payment-service</module>
+		<module>inventory-service</module>
 	</modules>
 
 </project>
