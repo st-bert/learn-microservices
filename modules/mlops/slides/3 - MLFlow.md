@@ -12,7 +12,7 @@ MLflow addresses these challenges by offering a comprehensive suite of tools and
 
 MLflow seamlessly integrates into the **MLOps** (Machine Learning Operations) paradigm, an approach that combines development and operational practices to ensure efficiency and quality in machine learning projects. Through MLOps, MLflow allows for the management of the entire model lifecycle, from design and development to deployment and post-launch monitoring. This approach not only enhances consistency and transparency in the development process but also fosters a culture of collaboration and continuous improvement among data science and IT teams.
 
-![](images/mlflow-logo.png)
+![](images/mlflow-logo.webp)
 
 ---
 
@@ -43,7 +43,7 @@ Artifacts, on the other hand, are the files generated during the runs and includ
 
 Artifacts **are not stored in the database** since they take up more space and require different management. Instead, they are stored in a separate storage space, which can be a local folder or a cloud storage service.
 
-![](images/mlflow-metadata.png)
+![](images/mlflow-metadata.webp)
 
 This separation between metadata and artifacts optimizes the efficiency of MLflow and allows for a more scalable management of experiment data.
 
@@ -162,7 +162,7 @@ This activity may include:
 
 Each run is associated with a specific experiment and allows all details related to that activity to be recorded.
 
-![](images/mlflow-exp-run.png)
+![](images/mlflow-exp-run.webp)
 
 To create a run, you use the `mlflow.start_run()` function; An example of how to start a run is shown below:
 

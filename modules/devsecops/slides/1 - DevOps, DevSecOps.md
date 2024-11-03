@@ -175,7 +175,7 @@ DevOps metrics are data points that directly reveal the performance of a DevOps 
 
 Lead time measures the period between a code commit and the point where it is ready for production (passes tests and reviews). High-performance teams typically measure lead times in hours, whereas low-performance teams may take days or weeks.
 
-![](images/devops-lead-time.png)
+![](images/devops-lead-time.webp)
 
 Key practices to improve lead time include test automation, trunk-based development, and working in small batches. These ensure quick feedback and the ability to address defects early.
 
@@ -197,7 +197,7 @@ MTTR measures the time it takes to recover from production incidents or failures
 
 Quick recovery relies on continuous monitoring, alerting systems, and the ability to rapidly deploy fixes or roll back problematic changes.
 
-![](images/devops-MTTR.png)
+![](images/devops-MTTR.webp)
 
 
 ## DevSecOps
