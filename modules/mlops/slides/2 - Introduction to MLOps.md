@@ -10,7 +10,7 @@ MLOps is a set of practices that unifies machine learning (ML) model development
 
 Building on the core principles of DevOps, MLOps addresses the specific challenges of machine learning by integrating automation, collaboration, and continuous feedback loops. It ensures that ML systems are developed, deployed, and maintained efficiently, with a focus on enabling the continuous delivery and improvement of machine learning models. By doing so, MLOps helps ensure that models remain effective, scalable, and adaptable to changing conditions in production environments.
 
-![DevOps Cycle](images/MLOps_intro/MLOps_Ven.jpg)
+![](images/mlops-venn.jpg)
 
 ### Definitions
 
@@ -48,7 +48,7 @@ This includes stages from data ingestion, preprocessing, model training, and val
 
 These are some factors that can trigger automated model training and deployment:
  
-- **Messagging**: Automation can be triggered by messages or notifications from monitoring or orchestration systems. For example, when a drop in model performance is detected, a message can trigger a new training phase to improve the model.
+- **Messaging**: Automation can be triggered by messages or notifications from monitoring or orchestration systems. For example, when a drop in model performance is detected, a message can trigger a new training phase to improve the model.
 Example: A data drift warning that triggers the training of a new model based on updated data.
 
 - **Monitoring or Calendar Events**:
@@ -148,7 +148,7 @@ There are three levels of MLOps implementation, depending on the maturity of aut
 - Retraining of models is infrequent, often happening only a few times per year.
 - There is no integration of CI/CD pipelines for ML models, and active performance monitoring is absent.
 
-![MLOps Level 0](images/MLOps_intro/lev0.png)
+![](images/mlops-l0.png)
 
 ---
 
@@ -159,7 +159,7 @@ There are three levels of MLOps implementation, depending on the maturity of aut
 - There is some level of automation in terms of **continuous integration** for the software, but ML model training and deployment are still semi-manual.
 - Models may be retrained more frequently compared to Level 0, but this is still done on a scheduled basis.
 
-![MLOps Level 1](images/MLOps_intro/lev1.png)
+![](images/mlops-l1.png)
 
 ---
 
@@ -170,7 +170,7 @@ There are three levels of MLOps implementation, depending on the maturity of aut
 - Reusable and composable modular code components are created for ML pipelines, allowing for a more **scalable** and **consistent** pipeline structure.
 - The same pipeline is implemented across development, pre-production, and production environments, ensuring consistency and reducing errors.
 
-![MLOps Level 2](images/MLOps_intro/lev2.png)
+![](images/mlops-l2.png)
 
 ---
 
@@ -181,7 +181,7 @@ There are three levels of MLOps implementation, depending on the maturity of aut
 - **Continuous Delivery (CD)**: The deployment process is fully automated, from retraining the model to deploying it alongside the application code, ensuring the model is always up-to-date and optimally performing in production.
 - This level allows for the most **robust**, **scalable**, and **adaptive** machine learning operations.
 
-![MLOps Level 3](images/MLOps_intro/lev3.png)
+![](images/mlops-l3.png)
 
 
 

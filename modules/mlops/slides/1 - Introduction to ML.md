@@ -4,7 +4,7 @@
 
 Machine Learning models are computer algorithms that use data to make estimates (reasoned guesses) or decisions. Machine Learning models differ from traditional algorithms in the way they are designed. When a traditional computer software needs to be improved, users modify it. In contrast, a Machine Learning algorithm uses data to improve a specific task.
 
-![ML_vs_traditional](images/ML/ML_vs_traditional.jpg)
+![](images/ml-vs-programming.jpg)
 
 ---
 
@@ -15,12 +15,12 @@ Machine learning can be divided into three main categories, depending on how sys
 ### 1. Supervised Learning
 In supervised learning, the system receives a set of labeled data, that is, with input (problems) and output (solutions) already defined. The goal is for the model to learn the relationship between input and output so that it can apply it to new, unseen data. In short, the model generalizes a rule that connects input and output, and uses it to solve similar problems in the future.
 
-![ML_S_Learning](images/ML/Supervised_learning.png)
+![](images/supervised-learning.png)
 
 ### 2. Unsupervised Learning
 In unsupervised learning, the system receives a set of unlabeled data, i.e., only inputs without any indication of the desired outputs. The model's task is to identify hidden patterns or logical structures in the data, without any external intervention. The goal is to discover correlations or clusters within the dataset without prior knowledge.
 
-![ML_US_Learning](images/ML/Unsupervised_learning.png)
+![](images/unsupervised-learning.png)
 
 ### 3. Reinforcement Learning.
 In reinforcement learning, the system learns by interacting with a dynamic environment and improves its behavior through a reward and punishment mechanism. The model receives positive or negative feedback depending on the actions taken, gradually adapting to maximize rewards over time. This type of learning is particularly useful for scenarios where continuous action and adaptation are critical, such as in games or robotics.
@@ -79,7 +79,7 @@ Model **selection** is a critical step that depends on the specific goal of the 
 - **Clustering models**: used to group similar data without predefined labels, as in the case of user behavior analysis.
 - **Dimensional reduction**: a technique that simplifies data representation while retaining the most meaningful information; useful for improving model performance and facilitating visualization.
 
-![ML_type](images/ML/Models.png)
+![](images/ml-models.png)
 
 
 When choosing a model, it is important to consider complexity and interpretability. Simple models may offer advantages in computational resources and ease of interpretation, while more complex models may improve performance but require more resources.
@@ -95,7 +95,7 @@ The **selection of hyper-parameters** is another important step in model learnin
 
 To identify the best hyper-parameters, a **validation dataset** is often used. This dataset is separate from the training and test datasets and serves to evaluate the model's performance during the hyper-parameter tuning process without introducing bias. By using a validation set, practitioners can effectively assess how different hyper-parameter configurations influence model performance and avoid overfitting to the training data.
 
-Techniques such as **grid search** are used to systematically explore different combinations of hyper-parameters, testing each configuration on the validation dataset. Other techniques, such as **random search** and **Bayesian optimization**, can also be employed to quickly find optimal settings, reducing the computational time required compared to grid search.
+Techniques such as **grid search** are used to systematically explore different combinations of hyper-parameters, testing each configuration on the validation dataset. Other techniques, such as **random search** and **Bayesian optimization**, can also be employed to quickly find optimal settings, reducing the computational time required to be compared to grid search.
 
 ## 3. Model verification
 
@@ -109,7 +109,7 @@ The verification process has three main stages: requirements coding, formal veri
 
 - Finally, in the **test-based verification** phase, a test dataset is used to evaluate how the model performs with previously unseen data. This phase is crucial to ensure that the model not only performs well during training, but can also generalize effectively in real-world situations. It is important to note that validation of the data must occur continuously to identify and correct any errors that could affect the performance of the model over time.
 
-![ML_lifecycle](images/ML/Lifecycle_ML.png)
+![](images/mlops-lifecycle.png)
 
 ### 4. Model Deployment
 

@@ -58,10 +58,10 @@ We have two MySQL databases:
 
 ### Datasets table
 
-|**Fields**     |**Type**      |**Attributes**|
-|---------------|--------------|--------------|
-|*dataset_id*   |`int`         |primary key   |
-|*name*         |`varchar(255)`|              |
+| **Fields**   | **Type**       | **Attributes** |
+|--------------|----------------|----------------|
+| *dataset_id* | `int`          | primary key    |
+| *name*       | `varchar(255)` |                |
 
 ### Samples table
 
@@ -113,16 +113,16 @@ We have two MySQL databases:
 
 ### Datasets Table
 
-| **Fields**           | **Type**        | **Attributes**    |
-|----------------------|-----------------|-------------------|
-| *dataset_uuid*       | `varchar(36)`   |                   |
-| *experiment_id*      | `int`           | primary key       |
-| *name*               | `varchar(500)`  | primary key       |
-| *digest*             | `varchar(36)`   | primary key       |
-| *dataset_source_type*| `varchar(36)`   |                   |
-| *dataset_source*     | `text`          |                   |
-| *dataset_schema*     | `mediumtext`    |                   |
-| *dataset_profile*    | `mediumtext`    |                   |
+| **Fields**            | **Type**       | **Attributes** |
+|-----------------------|----------------|----------------|
+| *dataset_uuid*        | `varchar(36)`  |                |
+| *experiment_id*       | `int`          | primary key    |
+| *name*                | `varchar(500)` | primary key    |
+| *digest*              | `varchar(36)`  | primary key    |
+| *dataset_source_type* | `varchar(36)`  |                |
+| *dataset_source*      | `text`         |                |
+| *dataset_schema*      | `mediumtext`   |                |
+| *dataset_profile*     | `mediumtext`   |                |
 
 
 ### Experiment Tags Table
