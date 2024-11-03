@@ -59,13 +59,22 @@ To help us in these operations we can use **DevOps**'s practices.
 
 ## DevOps
 
-**DevOps** is a set of adaptable **practices** and **processes** that organizations use to build and deliver applications and services, aligning software development closely with IT operations.
+### Definitions
+There are various definitions of DevOps from both industry and academia that, while differing in phrasing, convey similar core concepts:
 
-Adopting DevOps is essential for organizations to keep up with the ever-increasing speed of development demanded by both customers and internal stakeholders. Leveraging cloud-native technologies, open-source solutions, and agile APIs, teams can now deliver and manage code more **effectively** than ever before.
+**Industry Perspectives:**
+- DevOps is a set of practices and tools that combines software development (Dev) and IT operations (Ops). It aims to shorten the systems development life cycle and provide continuous delivery with high software quality. DevOps is complementary to Agile software development; many aspects of DevOps have emerged from the Agile way of working. (Wikipedia)
+- DevOps is the combination of cultural philosophies, practices, and tools that increases an organization’s ability to deliver applications and services at high velocity. (AWS)
+- DevOps is a set of practices, tools, and a cultural philosophy that automates and integrates the processes between software development and IT teams, emphasizing team empowerment, cross-team communication, and technology automation. (Atlassian)
+- DevOps is a combination of software developers (Dev) and operations (Ops). It is defined as a software engineering methodology that aims to integrate the work of software development and operations teams by facilitating a culture of collaboration and shared responsibility. (GitLab)
 
-![DevOps](images/devops-devops.webp)
+**Academic Perspectives:**
+- DevOps is a collaborative and multidisciplinary organizational effort to automate the continuous delivery of new software updates while guaranteeing their correctness and reliability. (Leite et al, 2020)
+- It represents an organizational shift in which cross-functional teams work on continuous operational feature deliveries, rather than siloed groups performing functions separately. (Ebert et al, 2016)
+- DevOps is a development methodology aimed at bridging the gap between Development (Dev) and Operations (Ops), emphasizing communication and collaboration, continuous integration, quality assurance, and automated deployment through a set of development practices. (Jabbari et al, 2016)
 
-### How does DevOps works?
+
+### How does it work?
 
 In the DevOps model, **development** and **operations** teams no longer work in isolation.
 
@@ -75,7 +84,7 @@ Teams use **automation** to accelerate traditionally slow, manual processes. Dev
 
 These tools also empower teams to handle tasks that once required support from other departments, such as **code deployment** or **infrastructure provisioning**, boosting overall **efficiency**.
 
-### Continuous Integration (CI), Delivery (CD), Deployment (CD)
+### Key principles
 ![](images/continuous-delivery-and-continuous-deployment.webp)
 
 **Continuous Integration (CI)**
@@ -90,17 +99,106 @@ Continuous Delivery (CD) builds on CI by automating the testing and preparation 
 
 Continuous Deployment is the final step in the DevOps pipeline, automating the release of every code change that passes all tests directly into the **production environment**. By eliminating the need for manual deployment steps, continuous deployment enables a rapid feedback loop with users, providing immediate updates and ensuring that customers have access to the latest features without delays.
 
-### DevOps Pipeline
+**Continuous Testing**
 
-A typical **DevOps pipeline** consists of five key **stages**:
+This practice includes automated, scheduled, and continuous code tests during the writing or updating of application code. Such tests can speed up the delivery of code to production.
 
-- **Lint**: Conducts **static code analysis** to identify programming errors, bugs, stylistic issues, and suspicious constructs.
-- **Test**: Executes **functional tests** or **security analyses** on the code to ensure quality and safety.
-- **Build**: Compiles all the application’s **artifacts**.
-- **Package**: Uses the built artifacts to create a new **container image** and pushes it to the **container registry**.
-- **Deploy**: Updates the currently running microservice to the **latest version**.
+**Automation**
 
-A DevOps pipeline can be further optimized by adding stages, such as additional security checks, to ensure application code is robust before release. In this case, **DevSecOps** practices can be integrated throughout these operations.
+Automation is a critical DevOps practice that streamlines the software development lifecycle. By automating processes such as testing, integration, and deployment, developers have more time to focus on writing code and developing new features. Automation is central to the CI/CD pipeline, reducing human errors and boosting team productivity. Short iteration cycles made possible by automation enable teams to respond quickly to user feedback.
+
+**Infrastructure as Code (IaC)**
+
+This practice can be used during the various DevOps phases to enable the automation of infrastructure management and provisioning through code, ensuring consistency, repeatability and speed in the creation and modification of environments, thus facilitating collaboration between development and operations teams.
+
+**Monitoring and Feedback**
+
+Monitoring applications and gathering feedback from customers and users are essential for identifying and resolving issues quickly. Feedback loops help inform future development decisions, ensuring continuous improvement of the software.
+
+**Collaboration, Communication, and Shared Responsibility**
+
+Collaboration between development and operations teams is at the heart of DevOps. These teams merge into a single functional unit, working together throughout the entire application lifecycle, from planning to release. This close collaboration is built on open and continuous communication, shared feedback, and joint responsibility for delivering quality results.
+
+DevOps team members are responsible for the entire product lifecycle, including both front-end and back-end tasks. This comprehensive involvement leads to higher-quality outcomes and breaks down silos between different business functions.
+
+
+### Phases and Toolchain
+
+![](images/devops-devops.webp)
+
+**1. Planning**
+
+In this phase, the business value and requirements are defined. Teams establish the project goals and identify the necessary elements for the upcoming release.
+
+**Tools**: Jira, Git
+
+**2. Coding**
+
+The coding phase involves designing and developing the software, where developers create and update the source code.
+
+**Tools**: GitHub, GitLab, Bitbucket
+
+**3. Build**
+
+In this phase, software builds and versions are managed and automatic tools are used to compile and package the code for the next release sent to production. Code repositories or source package repositories are used, which also include the infrastructure required for the product release.
+
+**Tools**: Docker, Ansible, Puppet, Chef, Gradle, Maven, JFrog Artifactory
+
+**4. Testing**
+
+This phase involves continuous testing to ensure the software is bug-free and ready for production. Tests can be automated or manual.
+
+**Tools**: JUnit, Codeception, Selenium, Vagrant, TestNG
+
+**Deployment**
+In the deployment phase, the software is distributed to production environments. DevOps tools automate the deployment process to ensure repeatability and reliability.
+
+**Tools**: Puppet, Chef, Ansible, Jenkins, Kubernetes, OpenShift, OpenStack, Docker
+
+**Operations**
+This phase is focused on managing the software in production. Automation tools support continuous system maintenance.
+
+**Tools**: Ansible, Puppet, PowerShell, Chef, Salt, Otter
+
+**7. Monitoring**
+In the monitoring phase, the software’s performance is analyzed to identify any issues and ensure system stability.
+
+**Tools**: New Relic, Datadog, Grafana, Wireshark, Splunk, Nagios, Slack
+
+
+
+### Key Metrics
+
+DevOps metrics are data points that directly reveal the performance of a DevOps pipeline and help identify bottlenecks. These metrics enable DevOps teams to track progress in achieving high-level goals, including faster release cycles and improved application performance.
+
+**Lead Time for Changes**
+
+Lead time measures the period between a code commit and the point where it is ready for production (passes tests and reviews). High-performance teams typically measure lead times in hours, whereas low-performance teams may take days or weeks.
+
+![](images/devops-lead-time.png)
+
+Key practices to improve lead time include test automation, trunk-based development, and working in small batches. These ensure quick feedback and the ability to address defects early.
+
+**Change Failure Rate**
+
+This metric tracks the percentage of deployments that require quick fixes or rollbacks after production. High-performance teams aim for a rate of 0% to 15%.
+
+Practices such as test automation and trunk-based development are correlated with reduced failure rates, as they simplify identifying and fixing defects early in the process.
+
+**Deployment Frequency**
+
+This measures how often teams deploy updates to production. High-performance teams can deploy multiple times a day, while low-performance teams may deploy weekly or monthly.
+
+Frequent deployments require an automated pipeline that includes testing, feedback mechanisms, and minimizes manual intervention.
+
+**Mean Time to Recovery (MTTR)**
+
+MTTR measures the time it takes to recover from production incidents or failures. High-performance teams typically recover in under an hour, while low-performance teams may take days.
+
+Quick recovery relies on continuous monitoring, alerting systems, and the ability to rapidly deploy fixes or roll back problematic changes.
+
+![](images/devops-MTTR.png)
+
 
 ## DevSecOps
 
