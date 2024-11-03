@@ -70,6 +70,6 @@ Your pull requests are very welcome! To contribute, please refer to [this](https
 * DevOps and their benefits in distributed contexts
 * Automating security tests before deployment
 
-[M10 MLOps](modules/devsecops)
+[M10 MLOps](modules/mlops)
 * MLOps and their benefits in distributed contexts
 * Automating model observability with EvidentlyAI
