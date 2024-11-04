@@ -1,10 +1,8 @@
 # Docker Compose Overview
 Docker Compose is a powerful tool that allows us to define and manage multi-container Docker applications. It is particularly useful when working with microservice ecosystems, as it enables the easy launch and coordination of multiple containers simultaneously. With Compose, we can configure networking, define infrastructure as code, and also address scalability requirements.
 
-## `docker-compose.yml`
-The Compose file is the heart of Docker Compose, it consists of a YAML file (`docker-compose.yml`) that allows to define an application ecosystem including services, networking, disk space and more.
+The `docker-compose.yaml` file is the heart of Docker Compose, it is a YAML file that allows to define an application ecosystem including services, networking, disk space and more. It follows a hierarchical structure by the use of indentations.
 
-The `docker-compose.yaml` file follows a hierarchical structure by the use of indentations.
 - **services**: Defines the containers of the application, each service represents a container.
   - **[service-name]**: Name of the single service, the choice is at our discretion.
     - **image**: Specifies the image to use for the service.
@@ -25,6 +23,7 @@ compose-simple/
 │
 ├── app/
 │   ├── app.py
+│   ├── Dockerfile
 │   └── requirements.txt
 └── docker-compose.yml
 ```
@@ -404,6 +403,118 @@ networks:
 
 volumes:
   pg-data:
+```
+
+## Heartbeats
+
+Heartbeat functions — commonly referred to as **health checks** — are mechanisms that periodically verify whether a service (container) is healthy and functioning as expected. Implementing heartbeat functions ensures that your application components are up and running, and allows Docker Compose to manage:
+
+* **service dependencies**
+* **restarts**
+
+### Implementing Health Checks Using `curl`
+
+```yaml
+services:
+  webapp:
+    image: your-webapp-image
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+**Explanation:**
+
+- **`test`:** Uses `curl` with the `-f` flag to fail on HTTP errors. It requests the `/health` endpoint.
+- **`interval`:** Time between health checks (30 seconds).
+- **`timeout`:** Maximum time to wait for a response (10 seconds).
+- **`retries`:** Number of consecutive failures needed to mark the container as `unhealthy` (3 retries).
+
+### Implementing Health Checks Using `wget`
+
+Alternatively, you can use `wget` for the health check:
+
+```yaml
+services:
+  webapp:
+    image: your-webapp-image
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+
+### Implementing Health Checks Using Special-Purpose Commands
+
+For services like databases, specialized commands can provide more accurate health checks by verifying service-specific readiness.
+
+```yaml
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d mydb" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+```
+
+```yaml
+services:
+  redis:
+    image: redis:6
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+### Integrating Health Checks with the `depends_on` Directive
+
+The `depends_on` directive in Docker Compose specifies service dependencies, ensuring that certain services start before others. However, by default, `depends_on` only waits for the dependent containers to start, not to become healthy or ready.
+
+To make `depends_on` wait for a service to be healthy, Docker Compose supports condition-based dependencies. This integration ensures that a service only starts after its dependencies are reported as healthy.
+
+```yaml
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d mydb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  webapp:
+    image: your-webapp-image
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 ```
 
 ## Resources
