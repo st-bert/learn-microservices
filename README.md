@@ -25,6 +25,7 @@ Your pull requests are very welcome! To contribute, please refer to [this](https
 
 ## Modules
 [M1 Software architectures](modules/software-architectures)
+
 * Monolithic and distributed architectural styles
 * The transition towards microservices architectures
 
