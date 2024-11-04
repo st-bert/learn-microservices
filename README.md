@@ -29,7 +29,6 @@ Your pull requests are very welcome! To contribute, please refer to [this](https
 * The transition towards microservices architectures
 
 [M2 Tools: Java, Maven, Spring Boot, JMeter](modules/tools)
-* Java recap: generics, functional programming
 * Building a basic layered microservice with Spring Boot
 * Project packaging with Maven (one or multiple services per project)
 * Testing microservices with JMeter
