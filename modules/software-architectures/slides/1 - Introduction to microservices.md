@@ -81,7 +81,7 @@ Why a microservices architecture?
 
 
 
-![](images/scaling-monolith-vs-microservice.png)
+![](images/scaling-monolith-vs-microservice.webp)
 
 ![FTGO Monolithic Architecture](images/ftgo-monolitic-architecture.webp)
 ![FTGO Microservices Architecture](images/ftgo-microservices-architecture.webp)

@@ -57,6 +57,8 @@ When to use:
 
 Clean Architecture is an approach designed to make systems more maintainable, flexible, and testable. It emphasizes a separation of concerns by organizing the software into distinct layers, where the inner layers are not dependent on the outer ones. This architecture focuses on creating independent and reusable components, with clear rules for how different parts of the application should interact.
 
+![](images/clean-architecture.webp)
+
 Benefits:
 * Clean Architecture promotes high decoupling between components, ensuring that changes in one part of the system do not affect others.
 * It enhances the testability of the system, allowing developers to test business logic independently from external factors like UI or databases.
@@ -123,14 +125,6 @@ When to use:
 | performance      | * * *     |
 | evolvability     | *         |
 | simplicity       | * * * * * |
-
-### Big Ball of Mud
-A Big Ball of Mud is a haphazardly structured, sprawling, sloppy, duct-tape-and-baling-wire, spaghetti-code jungle. These systems show unmistakable signs of unregulated growth, and repeated, expedient repair. Information is shared promiscuously among distant elements of the system, often to the point where nearly all the important information becomes global or duplicated - *Brian Foote and Joseph Yoder*
-
-Each dot on the perimeter of the circle represents a class, and each line represents connections between the classes, where bolder lines indicate stronger connections.
-
-![](images/swarch-big-ball-of-mud.webp)
-
 
 ## Distributed Architecture
 
