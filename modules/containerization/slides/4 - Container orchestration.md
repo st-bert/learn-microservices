@@ -421,7 +421,7 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -445,7 +445,7 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "wget", "--spider", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "wget --spider http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -476,7 +476,7 @@ services:
   redis:
     image: redis:6
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -511,7 +511,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
