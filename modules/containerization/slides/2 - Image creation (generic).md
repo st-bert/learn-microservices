@@ -30,7 +30,7 @@ CMD ["python3", "/app/myapp.py"]
 
 **Read-Only Layers**: Once built, all the layers in a Docker image are **read-only**. When the image is used to start a container, Docker combines these read-only layers into a unified view using a **Union File System** (like **OverlayFS**), allowing them to act as a single entity.
 
-**Layer Caching**: Docker caches layers to make builds faster. If a Dockerfile instruction hasn’t changed, Docker reuses the previously built layer, improving build performance.
+**Layer Caching**: Docker caches layers to make builds faster. If a Dockerfile instruction has not changed, Docker reuses the previously built layer, improving build performance.
 
 **Layer Reuse**: Because layers are independent and reusable, multiple images can share common layers. For instance, if two images are built on the same base image (e.g., Ubuntu), they can reuse the base layer, reducing storage needs and speeding up deployment.
 
@@ -98,6 +98,16 @@ This command runs `app.py` using Python 3 when the container starts.
 > **NOTE**: The key difference between `CMD` and `RUN` is the timing of the command execution. `RUN` is executed during the build time, while `CMD` is executed during container startup.
 > **IMPORTANT**: There can only be one `CMD` instruction in a Dockerfile. If you list more than one `CMD`, only the last one takes effect.
 
+### `CMD-SHELL`
+
+The `CMD-SHELL` form of `CMD` allows you to specify a command in a single string format rather than an array. It runs the command in a shell, typically `/bin/sh -c` on Linux and `cmd /S /C` on Windows. This form is useful if you need shell features like variable substitution, piping, or chaining commands.
+
+```dockerfile
+CMD python3 app.py
+```
+
+In this example, the command is interpreted by the shell, so `python3 app.py` is executed within the container’s shell environment.
+
 ### `ENTRYPOINT`
 The `ENTRYPOINT` instruction specifies the command that will run as the main process of the container. Unlike the `CMD` instruction, `ENTRYPOINT` commands are not overridden when the container is started with additional arguments. It is used to ensure the container runs the specified process by default.
 
@@ -138,7 +148,7 @@ ENV ENVIRONMENT=production
 
 ### `USER`
 
-The `USER` instruction sets the user name or UID that will run the subsequent commands in the container. It is used to specify which user the processes inside the container will run as.
+The `USER` instruction sets the username or UID that will run the subsequent commands in the container. It is used to specify which user the processes inside the container will run as.
 
 ```dockerfile
 USER appuser
@@ -280,45 +290,7 @@ docker run -it --entrypoint=/bin/sh ls-command
 
 In this section, we will create and containerize a simple Echo server using Flask, which echoes back any data sent to it.
 
-### Step 1: Set Up the Flask Echo Server
-
-Create a project directory:
-
-```bash
-mkdir flask-echo-server
-cd flask-echo-server
-```
-
-### Step 2: Create a Python File
-
-Create a Python file named `app.py` with the following content:
-
-```python
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
-# Route to echo the received data
-@app.route('/echo', methods=['POST'])
-def echo():
-    data = request.json
-    return jsonify({"echoed_data": data})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-```
-
-This simple Flask application defines a POST endpoint (`/echo`). It expects JSON data and echoes back the same data.
-
-### Step 3: Create a `requirements.txt` File
-
-In the same directory, create a `requirements.txt` file to list the dependencies for the project. For this project, we need Flask:
-
-```bash
-Flask
-```
-
-### Step 4: Create a Dockerfile
+### Step 1: Create a Dockerfile
 
 Create a `Dockerfile` with the following content:
 
@@ -344,32 +316,80 @@ This Dockerfile does the following:
 2. Sets the working directory.
 3. Copies the current directory contents into the container.
 4. Installs dependencies from `requirements.txt`.
-6. Runs `app.py` when the container starts.
+5. Runs `app.py` when the container starts.
 
-### Step 5: Build the Docker Image
+### Step 2: Build the Docker Image
 
 Build the Docker image:
 
 ```bash
-docker buildx build -t flask-echo-server:latest .
+docker buildx build -t echo-server-flask:latest .
 ```
 
-### Step 6: Run the Docker Container
+### Step 3: Run the Docker Container
 
 Run the container:
 
 ```bash
-docker run -p 5000:5000 flask-echo-server
+docker run -p 5000:5000 echo-server-flask
 ```
 
 This command maps port 5000 on your host to port 5000 in the container, allowing you to access the Flask app.
 
-### Step 7: Test the Echo Server
+### Step 4: Test the Echo Server
 
 Test the Echo server using a tool like `curl` or Postman.
-
-#### Using `curl`:
 
 ```bash
 curl -X POST http://localhost:5000/echo -H "Content-Type: application/json" -d '{"message": "Hello, Echo Server!"}'
 ```
+
+## Creating a Docker Image for a Spring Boot Echo Server
+
+In this section, we will create and containerize a simple Echo server using Flask, which echoes back any data sent to it.
+
+### Step 1: Create a Dockerfile
+
+Create a `Dockerfile` with the following content:
+
+```Dockerfile
+FROM eclipse-temurin:21
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} application.jar
+ENTRYPOINT ["java","-jar","/application.jar"]
+```
+
+This Dockerfile does the following:
+1. Uses Eclipse Temurin image.
+2. Sets the JAR_FILE local variable representing the application artifact.
+3. Copies the application artifact into the container.
+4. Runs `java -jar application.jar` when the container starts.
+
+### Step 2: Build the Docker Image
+
+Build the Docker image:
+
+```bash
+mvn clean package -Dmaven.test.skip=true
+docker buildx build -t echo-server-java:latest .
+```
+
+### Step 3: Run the Docker Container
+
+Run the container:
+
+```bash
+docker run -p 5000:5000 echo-server-java
+```
+
+This command maps port 5000 on your host to port 5000 in the container, allowing you to access the Flask app.
+
+### Step 4: Test the Echo Server
+
+Test the Echo server using a tool like `curl` or Postman.
+
+```bash
+curl -X POST http://localhost:5000/echo -H "Content-Type: application/json" -d '{"message": "Hello, Echo Server!"}'
+```
+
+

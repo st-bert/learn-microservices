@@ -14,25 +14,9 @@ Virtualization introduced a more efficient way to utilize resources by creating 
 
 ### Container Deployment
 
-Containers are lightweight, standalone software units that run directly on the host's operating system, eliminating the need for a separate OS for each application. They package everything an application needs to run, including libraries, dependencies, and binaries, providing **portability**, **efficiency**, and **isolation** without the overhead of VMs.
+Containers are lightweight, standalone software units that run directly on the host's operating system, eliminating the need for a separate OS for each application. They package everything an application needs to run, including libraries, dependencies, and binaries, providing **portability**, **efficiency**, and **isolation** without the overhead of VMs. As a rule of thumb, containers provide **application isolation** while reducing resource consumption.
 
-The following diagram illustrates the difference in resource usage between virtual machines and containers, showing that containers can run more efficiently on the same server since they don't need a full operating system.
-
-
-### Key Differences:
-- **VMs** run a full OS, whereas **containers** share the host OS.
-- Containers are more **lightweight** and offer faster **start-up times** compared to VMs.
-- Containers ensure **application isolation** while reducing resource consumption.
-
-## Container Technologies
-
-Here are some container technologies offering various capabilities for containerization, each suited for different requirements:
-
-- **Docker**: The most popular containerization platform, allowing developers to package applications and their dependencies into containers. 
-- **Podman**: A daemonless, open-source alternative to Docker, focusing on security. It is fully compatible with Docker’s CLI, offering similar functionality without the need for a central daemon.
-- **Kubernetes**: Not a container technology itself but a powerful container orchestration platform that automates deploying, scaling, and managing containerized applications. Kubernetes works seamlessly with Docker and other container runtimes.
-
-### Chroot: the first attempt at containerization
+## Chroot: the first attempt at containerization
 
 The `chroot` command in Unix-like operating systems changes the apparent root directory for a process and its children. This essentially "jails" the process within a specified directory, making it impossible for the process to access files outside that directory. This is commonly referred to as a "chroot jail."
 
@@ -88,6 +72,16 @@ $ sudo chroot cage /bin/ls
 $ sudo chroot cage /bin/bash
 ```
 
+
+## Container Technologies
+
+Here are some container technologies offering various capabilities for containerization, each suited for different requirements:
+
+- **Docker**: The most popular containerization platform, allowing developers to package applications and their dependencies into containers. 
+- **Podman**: A daemonless, open-source alternative to Docker, focusing on security. It is fully compatible with Docker’s CLI, offering similar functionality without the need for a central daemon.
+- **Kubernetes**: Not a container technology itself but a powerful container orchestration platform that automates deploying, scaling, and managing containerized applications. Kubernetes works seamlessly with Docker and other container runtimes.
+
+
 ## Key Use Cases
 
 ### Microservices and Application Isolation
@@ -139,7 +133,6 @@ Several container image formats are in use today, each with its advantages:
 Docker is an open-source platform that enables developers to automate the deployment, scaling, and management of applications within lightweight, portable containers. This guarantees that applications run consistently across different environments, regardless of the underlying machine's customized settings. Consequently, developers can write code and test it in a container that behaves the same way on any machine, leading to fewer deployment issues.
 
 ![](images/docker-architecture.webp)
-![Container Lifecycle](images/container-lifecycle.webp)
 
 The Docker architecture consists of several key components:
 
