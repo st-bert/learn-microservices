@@ -15,32 +15,19 @@ The `docker-compose.yaml` file is the heart of Docker Compose, it is a YAML file
     - **healthcheck**: Ensures that the service is healthy, specifying the interval and number of tries.
 
 ### Basic example of `docker-compose.yml`
-Now we will deploy a simple Flask application mapped to the port 5000 (code/compose-simple).
-
-`Project structure`
-```
-compose-simple/
-│
-├── app/
-│   ├── app.py
-│   ├── Dockerfile
-│   └── requirements.txt
-└── docker-compose.yml
-```
+Now we will deploy a simple application mapped to the port 5000 (code/echo-server-logs-java).
 
 ```Dockerfile
-FROM python:3.9-slim
-WORKDIR /app
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["python", "app.py"]
+FROM eclipse-temurin:21
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} application.jar
+ENTRYPOINT ["java","-jar","/application.jar"]
 ```
 
 ```yaml
 services:
-  flask:
-    build: app
+  echo:
+    build: .
     ports:
       - "5000:5000"
 ```
@@ -48,59 +35,142 @@ services:
 Now with everything set up, we will start the ecosystem with the `docker-compose up` command in the context of the project directory.
 
 ```bash
-docker-compose up
+$ export COMPOSE_FILE=docker-compose-simple.yaml
+$ mvn clean package -Dmaven.test.skip=true
+$ docker compose build
+$ docker compose up --detach
 ```
 
-To test everything we can `curl` or use a browser to `http://localhost:5000` to get the "Hello from Flask in Docker!" message. 
+To test:
+
+```bash
+$ curl -X POST http://localhost:5000/echo -H "Content-Type: application/json" -d '{"message": "Hello, Echo Server!"}'
+```
+
+## Resource limitation
+In Docker Compose we can limit CPU and memory for containers (code/cpu-memory-meter). Its controller is reported below:
+
+```java
+@RestController
+public class MeterController {
+
+    @GetMapping(value = "/")
+    public Map<String, Object> echo() {
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        long totalMemory = Runtime.getRuntime().totalMemory();
+        long freeMemory = Runtime.getRuntime().freeMemory();
+
+        return Map.of(
+                "Available processors (cores)", Runtime.getRuntime().availableProcessors(),
+                "Free memory (MB)", Runtime.getRuntime().freeMemory() / 1_000_000,
+                "Maximum memory (MB)", maxMemory == Long.MAX_VALUE ? "no limit" : maxMemory / 1_000_000,
+                "Total memory (MB)", Runtime.getRuntime().totalMemory() / 1_000_000,
+                "Allocated memory (MB)", (totalMemory - freeMemory) / 1_000_000
+        );
+    }
+
+    @GetMapping(value = "/allocate/{size}")
+    public Map<String, Object> allocate(@PathVariable Integer size) {
+        try {
+            byte[] array = new byte[size * 1_000_000];
+            return Map.of("array allocation", "OK");
+        } catch (OutOfMemoryError e) {
+            return Map.of("array allocation", "Out of memory");
+        }
+    }
+}
+```
+
+To apply the resource limitation to a specific `service` we need to add the `resources.limits` attribute under `deploy`.
+
+```yaml
+services:
+  meter:
+    build: .
+    ports:
+      - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M    # Restrict memory to 512MB
+          cpus: '2'       # Restrict cpus to 2 cores
+```
+
+```bash
+$ unset COMPOSE_FILE
+$ mvn clean package -Dmaven.test.skip=true
+$ docker compose build
+$ docker compose up --detach
+```
+
+```bash
+$ curl http://localhost:8080 | jq
+{
+  "Total memory (MB)": 37,
+  "Maximum memory (MB)": 129,
+  "Available processors (cores)": 2,
+  "Allocated memory (MB)": 21,
+  "Free memory (MB)": 16
+}
+```
+
+As expected the number of (perceived) cores is 2. Maximum memory (MB) represents the *estimated* maximum size of the HEAP memory. The JVM usually sets it between 25pc and 50pc of the total memory. In this case 129MB is approximately 25pc of the total 512MB.
+
+As a final test, you can try to allocate memory inside the service. This example allocates 10MB and works fine.
+
+```bash
+╰> curl http://localhost:8080/allocate/10
+{"array allocation":"OK"}%
+```
+
+Instead, this example allocates 100MB and produces an error.
+
+```bash
+╰> curl http://localhost:8080/allocate/100
+{"array allocation":"Out of memory"}%   
+```
 
 
-## Lifecycle di Docker Compose
-Now that we know how to set up a simple ecosystem with compose, we will show how to really manage it with CLI commands. Docker Compose allows us to manage the ecosystem's lifecycle with `docker-compose <command>`:
-  - **`up`**: Start all services defined in the`docker-compose.yml` file.
-  - **`down`**: Stops and removes all containers, networks, volumes defined in the compose file.
-  - **`build`**: Builds the Docker images specified in services.
-  - **`logs`**: Views the logs of all containers in execution.
 
-In the following sections we will introduce and explain various features of Docker compose, these features will allow us to set up and customize a multi-container ecosystem adapt to our necessities and use cases.
 
 ## Replicas
-A **Replica** in Docker refers to the ability to instantiate more replicas of the same container, this allows us to scale it horizontally.
+A **Replica** in Docker refers to the ability to instantiate more replicas of the same container, this allows us to scale it horizontally (code/echo-server-logs-java).
 The `deploy` field allows us to manage replicas and is composed of:
- - `mode`: This indicates how to run the service **global** means one container per host or **replicated** to run on the same host machine.
+ - `mode`: **global** or **replicated**
    - `replicas`: the number of replicas.
 
 > [!NOTE]
 > If not specified, `mode` is defaulted to `replicated`
 
-
-We will create an [updated version](https://github.com/NakajimaAkemi/Microservices-containerization/tree/master/workdir/replica-compose) of our first example by adding  to the compose file and defining the number of replicas.
-
 ```yaml
 services:
-  flask:
-    build: app
+  echo:
+    build: .
     ports:
       - "5000"
     deploy:
-      mode: replicated
       replicas: 3
+
 ```
 > [!NOTE]
-> Since the service we're replicating is mapping ports, we will specify only port number and not the range, otherwise it will show an error.
+> Since the service we're replicating is mapping ports, we will specify only the container port (omitting the host port), otherwise it will show an error.
 
 As standard procedure we will start up the ecosystem and see the running containers.
 
 ```bash
-docker-compose up --detach
+$ export COMPOSE_FILE=docker-compose-replicas.yaml
+$ mvn clean package -Dmaven.test.skip=true
+$ docker compose build
+$ docker compose up --detach
 ```
 
 ```bash
 $ docker ps
 
 CONTAINER ID   IMAGE        COMMAND         ...    PORTS
-abc123         flask_app    "python app.py" ...    0.0.0.0:32768->5000/tcp
-def456         flask_app    "python app.py" ...    0.0.0.0:32769->5000/tcp
-ghi789         flask_app    "python app.py" ...    0.0.0.0:32770->5000/tcp
+abc123         echo-server-logs-java-echo    "java -jar /applicat" ...    0.0.0.0:32768->5000/tcp
+def456         echo-server-logs-java-echo    "java -jar /applicat" ...    0.0.0.0:32769->5000/tcp
+ghi789         echo-server-logs-java-echo    "java -jar /applicat" ...    0.0.0.0:32770->5000/tcp
 ```
 
 We can verify their reachability with a browser or the `curl` command (port numbers might vary):
@@ -108,26 +178,9 @@ We can verify their reachability with a browser or the `curl` command (port numb
  - http://localhost:32769
  - http://localhost:32770
 
-
-## Resource limitation
-In Docker Compose we can limit CPU and memory for containers. To apply the resource limitation to a specific `service` we need to add the `resources` and `limits` attribute under `deploy`. 
-Then, we can define the resource limitations with:
-   - `memory`: specifies how much memory the container can allocate
-   - `cpus`: fractions of CPU cores the container can use
-
-```yaml
-services:
-  app:
-    image: myapp
-    deploy:
-      resources:
-        limits:
-          memory: 512M    # Set the maximum memory limit (hard limit)
-          cpus: '0.5'     # Restrict CPU usage to 50% of one CPU core
-```
-
 ## Volumes and Bind Mounts
 In this section we introduce `Volumes` and `Bind Mounts` as fundamental items for Docker containers that allow us to maintain persistent data surviving beyond the container lifecycle, facilitating sharing data between containers, backup and restore.
+
 - `Volumes`: are directly managed by Docker and can survive beyond the container's lifecycle, usefully if we want persistence of our data.
 
 - `Anonymous volumes`: are temporary volumes created by Docker when a container starts. They are typically used for temporary data, they are ephemeral and removed when the container is removed.
@@ -144,107 +197,97 @@ In this section we introduce `Volumes` and `Bind Mounts` as fundamental items fo
 
 _Is also important to say that if a service doesn't specify a volumes section, it means that the service won't have any volumes mounted. Essentially, **no data will be persisted outside the container** for that service._
 
-In the following example (code/compose-volumes) we have a simple Flask echo server configured to save logs in '/data/log.txt'.
-This file can be written inside the container or externalized with either volumes or bind mounts.
+In the following example (code/echo-server-logs-java) we have an echo server configured to save logs in '/tmp/application.log'. This file can be written inside the container or externalized with either volumes or bind mounts.
 
-```python
-from flask import Flask, request, jsonify
-import datetime
-import os
+```java
+@Log
+@RestController
+public class EchoController {
+    @PostMapping(value = "/echo")
+    public Map<String, Object> echo(@RequestBody String message) {
+        log.info(message);
+        return Map.of("echoed_data", message);
+    }
 
-app = Flask(__name__)
-
-LOG_FILE_PATH = '/data/log.txt'
-
-@app.route('/echo', methods=['POST'])
-def echo():
-    data = request.json 
-    with open(LOG_FILE_PATH, 'a') as f:
-        f.write(f"I echoed the message  {data} at: {datetime.datetime.now()}</br>\n")
-    return jsonify({"echoed_data": data})
-
-
-@app.route('/logs')
-def read_logs():
-    if os.path.exists(LOG_FILE_PATH):
-        with open(LOG_FILE_PATH, 'r') as f:
-            log_content = f.read()
-        return log_content
-    else:
-        return "Log file not found!", 404
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5000)
-```
-
-We can send a message to the echo server with:
-
-```bash
-curl -X POST http://localhost:5000/echo -H "Content-Type: application/json" -d '{"message": "Hello, Echo Server!"}'
-```
-
-We can query the logs with:
-
-```bash
-curl -X GET http://localhost:5000/logs
+    @GetMapping(value = "/logs")
+    public Map<String, Object> logs() throws IOException {
+        log.info("requested_logs");
+        Path path = FileSystems.getDefault().getPath("/tmp", "application.log");
+        return Map.of("lines", Files.readAllLines(path));
+    }
+}
 ```
 
 ### Volumes
 
 ```yaml
 services:
-  web:
-    build: app  # Builds the service from the Dockerfile located in the 'app' directory
+  echo:
+    build: .
     ports:
-      - "5000:5000"  # Maps port 5000 of the host to port 5000 of the container
+      - "5000:5000"
     volumes:
-      - logs:/data  # Attaches the 'logs' volume to the '/data' directory inside the container
+      - tmp:/tmp
 
 volumes:
-  logs:  # Defines a named volume called 'logs' which can persist data across container restarts
+  tmp:
 ```
 
-- **services**: Defines the services (containers) to be created. Here, only one service named `web` is defined.
-- **build**: Instructs Docker to build the image using a Dockerfile located in the `app` directory.
+- **services**: Defines the services (containers) to be created. Here, only one service named `echo` is defined.
+- **build**: Instructs Docker to build the image using a Dockerfile located in the current dir.
 - **ports**: Maps a port on the host (left side) to a port on the container (right side). Here, both are set to `5000`.
-- **volumes**: Specifies volumes to be mounted inside the container. The `logs` volume is mounted at `/data` within the container, which could be used for persistent storage.
-- **volumes** section: Defines the `logs` volume, which persists data independent of the container lifecycle.
+- **volumes**: Specifies volumes to be mounted inside the container. The `ymp` volume is mounted at `/tmp` within the container, which could be used for persistent storage.
+- **volumes** section: Defines the `tmp` volume, which persists data independent of the container lifecycle.
 
 ```bash
-$ docker compose -f docker-compose.volume.yaml up
+export COMPOSE_FILE=docker-compose-volume.yaml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
 ```
 
 ### Anonymous Volumes
 
 ```yaml
 services:
-  web:
-    build: app  # Builds the Docker image from the Dockerfile in the 'app' directory
+  echo:
+    build: .
     ports:
-      - "5000:5000"  # Maps port 5000 on the host to port 5000 in the container
+      - "5000:5000"
     volumes:
-      - /data  # Creates an anonymous volume and mounts it to the '/data' directory inside the container
+      - /tmp
 ```
 
-- **Anonymous Volume**: The path `/data` refers to an anonymous volume. Docker will automatically create a volume without a specific name, and it will be mounted to the `/data` directory inside the container. This volume is used for storing data but won't have a persistent identity unless managed externally (i.e., you won't be able to reuse or easily reference this volume by name later).
-- **build**: Builds the Docker image from the Dockerfile in the `app` directory.
-- **ports**: Maps port `5000` on the host to port `5000` inside the container, allowing access to the service running inside the container on that port.
+- **Anonymous Volume**: The path `/tmp` refers to an anonymous volume. Docker will automatically create a volume without a specific name, and it will be mounted to the `/tmp` directory inside the container. This volume is used for storing data but won't have a persistent identity unless managed externally (i.e., you won't be able to reuse or easily reference this volume by name later).
+
+```bash
+export COMPOSE_FILE=docker-compose-anonvolume.yaml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
+```
 
 ### Bind mounts
 
 ```yaml
 services:
-  flask:
-    build: app  # Builds the Docker image using the Dockerfile in the 'app' directory
+  echo:
+    build: .
     ports:
-      - "5000:5000"  # Maps port 5000 on the host to port 5000 in the container
+      - "5000:5000"
     volumes:
-      - /tmp/data:/data  # Bind mounts the '/tmp/data' directory from the host to the '/data' directory inside the container
+      - ./data:/tmp
 ```
 
-- **Bind Mount**: The path `/tmp/data:/data` specifies a bind mount. This means that the directory `/tmp/data` on the host machine is directly mounted into the container at `/data`. Any changes made in the container at `/data` will be reflected on the host's `/tmp/data` directory and vice versa.
-- **build**: Instructs Docker to build the image using the Dockerfile in the `app` directory.
-- **ports**: Maps port `5000` on the host to port `5000` inside the container, allowing external access to the service.
+- **Bind Mount**: The path `./data:/tmp` specifies a bind mount. This means that the directory `./data` on the host machine is directly mounted into the container at `/tmp`. Any changes made in the container at `/tmp` will be reflected on the host's `./data` directory and vice versa.
+
+```bash
+mkdir data
+export COMPOSE_FILE=docker-compose-bind.yaml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
+```
 
 ## Networks
 One aspect that makes the Docker engine a powerful tool is the possibility of creating and managing the services' connectivity. When using Docker Compose, networks are automatically created for your services, but you can also define custom networks to:

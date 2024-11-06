@@ -1,7 +1,0 @@
-services:
-  flask:
-    build: app
-    ports:
-      - "5000:5000"
-    volumes:
-      - /tmp/data:/data  # Bind mount
