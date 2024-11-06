@@ -16,10 +16,9 @@ When applications are relatively small, a monolithic architecture offers numerou
 As successful applications grow, they often outgrow the monolithic architecture, leading to various challenges:
 
 * **Slow Development**: The lengthy build process and slow startup times hinder productivity, making the edit-build-run-test cycle inefficient.
-* **Obsolete Technology Stack**: The monolithic structure hampers the adoption of new frameworks and languages, as rewriting the entire application is costly and risky.
 * **Testing Challenges**: The large size of the application makes thorough testing difficult, allowing bugs to slip into production.
 * **Long Deployment Path**: Updating production becomes cumbersome, often limiting updates to once a month and making continuous deployment nearly impossible.
-* **Difficult Scaling**: Conflicting resource requirements among application modules complicate server configuration.
+* **Obsolete Technology Stack**: The monolithic structure hampers the adoption of new frameworks and languages, as rewriting the entire application is costly and risky.
 
 ![FTGO Monolithic Hell](images/ftgo-monolitic-hell.webp)
 
