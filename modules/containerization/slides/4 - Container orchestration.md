@@ -15,13 +15,25 @@ The `docker-compose.yaml` file is the heart of Docker Compose, it is a YAML file
     - **healthcheck**: Ensures that the service is healthy, specifying the interval and number of tries.
 
 ### Basic example of `docker-compose.yml`
-Now we will deploy a simple application mapped to the port 5000 (code/echo-server-logs-java).
+Now we will deploy a simple application mapped to the port 5000 (code/echo-server-logs-java). It's controller is reported below:
 
-```Dockerfile
-FROM eclipse-temurin:21
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} application.jar
-ENTRYPOINT ["java","-jar","/application.jar"]
+```java
+@Log
+@RestController
+public class EchoController {
+    @PostMapping(value = "/echo")
+    public Map<String, Object> echo(@RequestBody String message) {
+        log.info(message);
+        return Map.of("echoed_data", message);
+    }
+
+    @GetMapping(value = "/logs")
+    public Map<String, Object> logs() throws IOException {
+        log.info("requested_logs");
+        Path path = FileSystems.getDefault().getPath("/tmp", "application.log");
+        return Map.of("lines", Files.readAllLines(path));
+    }
+}
 ```
 
 ```yaml
@@ -35,16 +47,16 @@ services:
 Now with everything set up, we will start the ecosystem with the `docker-compose up` command in the context of the project directory.
 
 ```bash
-$ export COMPOSE_FILE=docker-compose-simple.yaml
-$ mvn clean package -Dmaven.test.skip=true
-$ docker compose build
-$ docker compose up --detach
+export COMPOSE_FILE=docker-compose-simple.yaml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
 ```
 
 To test:
 
 ```bash
-$ curl -X POST http://localhost:5000/echo -H "Content-Type: application/json" -d '{"message": "Hello, Echo Server!"}'
+curl -X POST http://localhost:5000/echo -H "Content-Type: application/json" -d '{"message": "Hello, Echo Server!"}'
 ```
 
 ## Resource limitation
@@ -97,14 +109,14 @@ services:
 ```
 
 ```bash
-$ unset COMPOSE_FILE
-$ mvn clean package -Dmaven.test.skip=true
-$ docker compose build
-$ docker compose up --detach
+unset COMPOSE_FILE
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
 ```
 
 ```bash
-$ curl http://localhost:8080 | jq
+curl http://localhost:8080 | jq
 {
   "Total memory (MB)": 37,
   "Maximum memory (MB)": 129,
@@ -119,14 +131,14 @@ As expected the number of (perceived) cores is 2. Maximum memory (MB) represents
 As a final test, you can try to allocate memory inside the service. This example allocates 10MB and works fine.
 
 ```bash
-╰> curl http://localhost:8080/allocate/10
+curl http://localhost:8080/allocate/10
 {"array allocation":"OK"}%
 ```
 
 Instead, this example allocates 100MB and produces an error.
 
 ```bash
-╰> curl http://localhost:8080/allocate/100
+curl http://localhost:8080/allocate/100
 {"array allocation":"Out of memory"}%   
 ```
 
@@ -158,10 +170,10 @@ services:
 As standard procedure we will start up the ecosystem and see the running containers.
 
 ```bash
-$ export COMPOSE_FILE=docker-compose-replicas.yaml
-$ mvn clean package -Dmaven.test.skip=true
-$ docker compose build
-$ docker compose up --detach
+export COMPOSE_FILE=docker-compose-replicas.yaml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
 ```
 
 ```bash
@@ -173,19 +185,8 @@ def456         echo-server-logs-java-echo    "java -jar /applicat" ...    0.0.0.
 ghi789         echo-server-logs-java-echo    "java -jar /applicat" ...    0.0.0.0:32770->5000/tcp
 ```
 
-We can verify their reachability with a browser or the `curl` command (port numbers might vary):
- - http://localhost:32768
- - http://localhost:32769
- - http://localhost:32770
-
 ## Volumes and Bind Mounts
-In this section we introduce `Volumes` and `Bind Mounts` as fundamental items for Docker containers that allow us to maintain persistent data surviving beyond the container lifecycle, facilitating sharing data between containers, backup and restore.
-
-- `Volumes`: are directly managed by Docker and can survive beyond the container's lifecycle, usefully if we want persistence of our data.
-
-- `Anonymous volumes`: are temporary volumes created by Docker when a container starts. They are typically used for temporary data, they are ephemeral and removed when the container is removed.
-
-- `Bind mounts`: allow you to mount a directory or file from the host machine into the container (bind mounts depend on the host's absolute path).
+Docker containers allow us to maintain persistent data surviving beyond the container lifecycle, facilitating sharing data between containers, backup and restore.
 
 | Feature              | Anonymous Volume                               | Named Volume                                      | Bind Mount                                      |
 |----------------------|------------------------------------------------|---------------------------------------------------|-------------------------------------------------|
@@ -333,28 +334,25 @@ To inspect a specific network and see its details, including the associated cont
 docker network inspect <network_name>
 ```
 
-
-
-### Networks in Docker Compose
-Networks can be explicitly defined in `docker-compose.yml`. By default, Compose creates a single network that connects all the services. To control network behavior, you can define multiple networks and specify which services are connected to each.
-
-When defining networks in `docker-compose.yml`, inside the top-level attribute `networks` the following attributes can be specified:
-
-- **`driver`** : Specifies the network driver (default is `bridge` for single-host networking). 
-- **`driver_opts`**: Allows you to specify custom options for the chosen driver.
-- **`attachable`**: Allows containers to be manually attached to this network.
-- **`ipam`**: IP Address Management: lets you define custom IP address ranges, subnets, and gateways.
-- **`external`**: Indicates if the network is external (i.e., already created outside Compose).
-
-### Network example
-In this example (code/compose-network) we define the `backend` and `postgres` services connected to a custom network called `my_custom_network`, using a `bridge` driver, which is the default for single-host setups.
+### First example
+In this example (code/network-example) we define the `echo` and `postgres` services connected to a custom network called `my_network`, using a `bridge` driver, which is the default for single-host setups.
 
 ```yaml
 services:
+  echo:
+    build: echo-server-logs-db-java
+    ports:
+      - "5000:5000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - my_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:latest
-    container_name: postgres
-    restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: secret
@@ -362,43 +360,40 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks:
-      - my_custom_network
+      - my_network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U user -d jdbc_schema" ]
       interval: 30s
       timeout: 10s
       retries: 5
 
-  backend:
-    build:
-      context: backend
-    depends_on:
-      - postgres
-    ports:
-      - "5000:5000"
-    networks:
-      - my_custom_network
-    environment:
-      - DATABASE_URL=postgresql://user:secret@postgres:5432/jdbc_schema
+networks:
+  my_network:
+    driver: bridge
 
 volumes:
   pg-data:
-
-networks:
-  my_custom_network:
-    driver: bridge
 ```
 
-### Isolated Networks example
-A good way to use networks is for isolating a portion of the microservice ecosystem that does not need to be exposed to external networks. 
-In this example (code/compose-isolation), we define two networks `front_net` and `back_net`, this will allow us to hide the backend side of the network. 
+```bash
+unset COMPOSE_FILE
+cd echo-server-logs-db-java
+mvn clean package -Dmaven.test.skip=true
+cd ..
+docker compose build
+docker compose up --detach
+```
+
+
+### Second example
+A good way to use networks is for isolating a portion of the microservice ecosystem that does not need to be exposed to external networks. In this example (code/network-example), we define two networks `front_net` and `back_net`, this will allow us to hide the backend side of the network. 
 
 ![](images/ecosystem.webp)
 
 In this example:
-- The `frontend` and `backend` services share the `front_net`, allowing them to communicate.
-- The `backend` and `database` services share the `back_net`, isolating database traffic from the frontend.
-- `nginx` is used as a reverse proxy for API requests forwarding them to Flask
+- The `frontend` and `echo` services share the `front_net`, allowing them to communicate.
+- The `echo` and `database` services share the `back_net`, isolating database traffic from the frontend.
+- `nginx` is used as a reverse proxy for API requests forwarding
 
 ```yaml
 services:
@@ -409,21 +404,29 @@ services:
     networks:
       - front_net
     ports:
-      - "8080:8080"  # Expose the frontend on port 80
+      - "8080:8080"
+    depends_on:
+      echo:
+        condition: service_healthy
 
-  backend:
-    build:
-      context: backend  # Build backend from the local directory
+  echo:
+    build: echo-server-logs-db-java
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
     networks:
       - front_net
       - back_net
-    environment:
-      - DATABASE_URL=postgresql://user:secret@postgres:5432/jdbc_schema
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/logs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   postgres:
     image: postgres:latest
-    container_name: postgres
-    restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: secret
@@ -434,8 +437,8 @@ services:
       - back_net
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U user -d jdbc_schema" ]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 5
 
 networks:
@@ -446,6 +449,15 @@ networks:
 
 volumes:
   pg-data:
+```
+
+```bash
+export COMPOSE_FILE=docker-compose-isolation.yaml
+cd echo-server-logs-db-java
+mvn clean package -Dmaven.test.skip=true
+cd ..
+docker compose build
+docker compose up --detach
 ```
 
 ## Heartbeats
