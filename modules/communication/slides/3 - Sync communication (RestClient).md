@@ -16,7 +16,7 @@
 
 ## Building RESTful Services
 
-To create a RESTful service in Spring Boot, follow these steps (refer to shared-code/product-service-no-db):
+To create a RESTful service in Spring Boot, follow these steps (tools/code/product-service-no-db):
 
 1. **Create a New Spring Boot Project**:
    Use Spring Initializr to generate a new Spring Boot project with dependencies like `Spring Web`.
@@ -83,9 +83,9 @@ public class ProductController {
 
 ## Consuming RESTful Services with RestClient
 
-In a microservices architecture, it is often necessary for services to consume APIs provided by other services. Spring Boot provides a simple way to achieve this through the `RestClient`, which allows for HTTP requests to be made and handled effectively.
+In a microservices architecture, it is often necessary for services to consume APIs provided by other services. Spring Boot provides a simple way to achieve this through the `RestClient` class, which allows for HTTP requests to be made and handled effectively.
 
-To consume a RESTful service in Spring Boot, follow these steps (refer to order-service-no-db):
+To consume a RESTful service in Spring Boot, follow these steps (code/sync-one-to-one):
 
 1. **Create a New Spring Boot Project**:
    Use Spring Initializr to generate a new Spring Boot project with dependencies like `Spring Web`.
@@ -130,7 +130,7 @@ try {
 
 ## Docker configuration
 
-```
+```yaml
 services:
   product-service:
     image: product-service-no-db

@@ -1,18 +1,8 @@
 # Asynchronous communications
 
-Asynchronous communication is a key architectural pattern in distributed systems, particularly in microservice architectures, where services need to communicate without blocking each other. Unlike synchronous communication, where one service sends a request and waits for a response, asynchronous communication allows services to continue processing other tasks while awaiting a response or processing data from other services.
+Asynchronous communication is a key architectural pattern in distributed systems where services need to communicate without blocking each other. Unlike synchronous communication, where one service sends a request and waits for a response, asynchronous communication allows services to continue processing other tasks while awaiting a response.
 
 In an asynchronous communication model, services are decoupled, meaning they do not rely on immediate responses to continue functioning. This improves scalability, fault tolerance, and overall system performance, making it an attractive approach for handling large-scale, high-concurrency workloads.
-
-**Key Characteristics of Asynchronous Communication:**
-
-1. **Non-blocking**: Services do not wait for a response after sending a message. They can continue executing other tasks and handle the response when it arrives.
-
-2. **Message-driven**: Asynchronous communication typically revolves around message-passing, often using message brokers like RabbitMQ, Kafka, or AWS SQS. These brokers manage message delivery, persistence, and distribution across services.
-
-3. **Loose Coupling**: Asynchronous communication decouples services by allowing them to operate independently of each other’s availability. A failure in one service won’t cause an immediate failure in another as long as the broker can buffer or queue messages.
-
-4. **Event-Driven Architecture**: This communication style is closely tied to **event-driven architectures**, where services react to events or messages rather than relying on direct requests from other services.
 
 ![](images/communication-styles.webp)
 
@@ -70,8 +60,10 @@ Broker-based messaging systems rely on a **central message broker** to manage th
 * RabbitMQ (https://www.rabbitmq.com)
 * Apache Kafka (http://kafka.apache.org)
 * ActiveMQ (http://activemq.apache.org)
-* AWS Kinesis (https://aws.amazon.com/kinesis/)
+
 * AWS SQS (https://aws.amazon.com/sqs/)
+* Microsoft Azure Service Bus (https://azure.microsoft.com/en-us/products/service-bus/)
+* Google Cloud Pub/Sub (https://cloud.google.com/pubsub)
 
 #### Key Characteristics:
 - **Message Broker**: A central server or cluster that mediates the sending and receiving of messages.

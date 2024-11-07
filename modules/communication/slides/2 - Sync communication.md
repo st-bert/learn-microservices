@@ -19,6 +19,8 @@
 
 ## gRPC (Google Remote Procedure Call)
 
+![](images/rest-vs-grpc.png)
+
 **Key Features:**
 
 - **Efficient Binary Protocol (Protobuf)**: gRPC uses **Protocol Buffers (Protobuf)** for data serialization, which is more compact and faster than JSON or XML, significantly reducing payload sizes and improving performance.
@@ -40,6 +42,8 @@
 - **Strict Typing**: While strict typing ensures robustness, it also introduces rigidity, as changes to the API require careful management of Protobuf contracts.
 
 ## GraphQL
+
+![](images/rest-vs-graphql.jpg)
 
 **Key Features:**
 
@@ -92,14 +96,10 @@ Here’s a table summarizing the key differences between **REST**, **gRPC**, and
 
 Despite the advantages of each protocol, synchronous communication approaches share several limitations:
 
-1. **Blocking Nature**: In synchronous communications, the client must wait for the server to respond before proceeding. This can lead to **increased latency** and reduced system throughput, especially in distributed systems where network delays are common.
+1. **Tight Coupling**: Synchronous communication often leads to tight coupling between services. If one service is unavailable or slow to respond, it can impact the entire system, leading to cascading failures.
 
-2. **Tight Coupling**: Synchronous communication often leads to tight coupling between services. If one service is unavailable or slow to respond, it can impact the entire system, leading to cascading failures.
+2. **Scalability Challenges**: Synchronous requests can create bottlenecks under heavy load. Each client waiting for a response from the server consumes system resources (threads, memory), which can be problematic in high-concurrency environments.
 
-3. **Scalability Challenges**: Synchronous requests can create bottlenecks under heavy load. Each client waiting for a response from the server consumes system resources (threads, memory), which can be problematic in high-concurrency environments.
+3. **Latency Sensitivity**: The time it takes to complete a request in synchronous communication is directly tied to the time it takes for the server to process and respond. In cases where multiple services need to communicate, the cumulative latency can significantly degrade performance.
 
-4. **Error Propagation**: In synchronous systems, failures can propagate easily. If one service is down, all dependent services that make synchronous calls to it can also fail or slow down, affecting the overall system reliability.
-
-5. **Latency Sensitivity**: The time it takes to complete a request in synchronous communication is directly tied to the time it takes for the server to process and respond. In cases where multiple services need to communicate, the cumulative latency can significantly degrade performance.
-
-While **REST**, **gRPC**, and **GraphQL** offer distinct advantages in specific contexts, they all have limitations due to their synchronous nature. gRPC and GraphQL address many of REST’s inefficiencies, such as performance bottlenecks, over-fetching/under-fetching, and API evolution issues. However, the inherent blocking and scalability challenges of synchronous communication often necessitate a shift toward **asynchronous, broker-based communication** (e.g., message queues like RabbitMQ or Kafka) for truly scalable, decoupled microservice architectures.
+While **REST**, **gRPC**, and **GraphQL** offer distinct advantages in specific contexts, they all have limitations due to their synchronous nature. gRPC and GraphQL address many of REST’s inefficiencies, such as performance bottlenecks, over-fetching/under-fetching, and API evolution issues. However, the inherent challenges of synchronous communication often necessitate a shift toward **asynchronous, broker-based communication** (e.g., RabbitMQ or Kafka).
