@@ -1,18 +1,11 @@
-package com.nbicocchi.product.persistence.model;
+package com.nbicocchi.order.dto;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import lombok.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@Entity
 public class Product {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @EqualsAndHashCode.Include
     private String uuid;
