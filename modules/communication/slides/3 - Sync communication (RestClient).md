@@ -16,28 +16,35 @@
 
 ## Building RESTful Services
 
-To create a RESTful service in Spring Boot, follow these steps (tools/code/product-service-no-db):
+To create a RESTful service in Spring Boot, follow these steps (tools/code/product-service-h2):
 
-1. **Create a New Spring Boot Project**:
-   Use Spring Initializr to generate a new Spring Boot project with dependencies like `Spring Web`.
-
-2. **Define a Model Class**:
+1. **Define a Model Class**:
    Create a model class that represents the data structure of the resource. For example, a `Product` class:
 
 ```java
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Entity
 public class Product {
+   @Id
+   @GeneratedValue(strategy = GenerationType.IDENTITY)
    private Long id;
+   @EqualsAndHashCode.Include
+   private String uuid;
    private String name;
    private Double weight;
-   
-   // ...
+
+   public Product(String uuid, String name, Double weight) {
+      this.uuid = uuid;
+      this.name = name;
+      this.weight = weight;
+   }
 }
+
 ```
 
-3. **Create a REST Controller**:
+2. **Create a REST Controller**:
    Define a REST controller that handles incoming HTTP requests and responds with the appropriate data.
 
 ```java
@@ -50,9 +57,9 @@ public class ProductController {
       this.productService = productService;
    }
 
-   @GetMapping("/{id}")
-   public Product findById(@PathVariable Long id) {
-      return productService.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+   @GetMapping("/{uuid}")
+   public Product findByUuid(@PathVariable String uuid) {
+      return productService.findByUuid(uuid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
    }
 
    @GetMapping
@@ -65,16 +72,17 @@ public class ProductController {
       return productService.save(product);
    }
 
-   @PutMapping("/{id}")
-   public Product create(@PathVariable Long id, @RequestBody Product product) {
-      productService.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-      product.setId(id);
+   @PutMapping("/{uuid}")
+   public Product update(@PathVariable String uuid, @RequestBody Product product) {
+      Optional<Product> optionalProject = productService.findByUuid(uuid);
+      optionalProject.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+      product.setId(optionalProject.get().getId());
       return productService.save(product);
    }
 
-   @DeleteMapping("/{id}")
-   public void delete(@PathVariable Long id) {
-      Optional<Product> optionalProject = productService.findById(id);
+   @DeleteMapping("/{uuid}")
+   public void delete(@PathVariable String uuid) {
+      Optional<Product> optionalProject = productService.findByUuid(uuid);
       optionalProject.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
       productService.delete(optionalProject.get());
    }
@@ -87,34 +95,79 @@ In a microservices architecture, it is often necessary for services to consume A
 
 To consume a RESTful service in Spring Boot, follow these steps (code/sync-one-to-one):
 
-1. **Create a New Spring Boot Project**:
-   Use Spring Initializr to generate a new Spring Boot project with dependencies like `Spring Web`.
-
-2. **Use RestClient**:
-   Use `RestClient` to make HTTP requests to other services. Here's an example of a service that consumes a REST API to fetch user data:
+1. **Use RestClient**:
+   Use `RestClient` to make HTTP requests to other services. Here's an example of a service that consumes a REST API to fetch product data using a dedicated class named _ProductIntegration_:
 
 ```java
 @RestController
 @RequestMapping("/orders")
-public class ConsumerController {
-   RestClient restClient;
-   String productServiceUrl;
+public class OrderController {
+   OrderRepository orderRepository;
+   ProductIntegration productIntegration;
 
-   public ConsumerController(
-           @Value("${app.product-service.host}") String productServiceHost,
-           @Value("${app.product-service.port}") int productServicePort) {
-      productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/products";
+   public OrderController(OrderRepository orderRepository, ProductIntegration productIntegration) {
+      this.orderRepository = orderRepository;
+      this.productIntegration = productIntegration;
    }
 
-   @GetMapping("/{id}")
+   @GetMapping(value = "")
+   public Iterable<OrderDto> findAll() {
+      Iterable<Order> orders = orderRepository.findAll();
+
+      List<OrderDto> orderDtos = new ArrayList<>();
+      for (Order order : orders) {
+         OrderDto orderDto = new OrderDto(
+                 order.getId(),
+                 order.getUuid(),
+                 order.getTimestamp(),
+                 new HashSet<>()
+         );
+
+         for (ProductOrder productOrder : order.getProducts()) {
+            orderDto.getProducts().add(productIntegration.findbyUuid(productOrder.getUuid()));
+         }
+         orderDtos.add(orderDto);
+      }
+      return orderDtos;
+   }
+
+   @GetMapping(value = "/{id}")
    public Order findById(@PathVariable Long id) {
-      RestClient restClient = RestClient.builder().build();
-      List<Product> products = restClient.get()
-              .uri(productServiceUrl)
-              .retrieve()
-              .body(new ParameterizedTypeReference<>() {});
-      return new Order("order-x", LocalDate.now(), products);
+      return orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
    }
+}
+```
+
+```java
+@Component
+public class ProductIntegration {
+    String productServiceHost;
+    int productServicePort;
+
+    public ProductIntegration(
+            @Value("${app.product-service.host}") String productServiceHost,
+            @Value("${app.product-service.port}") int productServicePort) {
+        this.productServiceHost = productServiceHost;
+        this.productServicePort = productServicePort;
+    }
+
+    public List<ProductDto> findAll() {
+        String url = "http://" + productServiceHost + ":" + productServicePort + "/products";
+        RestClient restClient = RestClient.builder().build();
+        return restClient.get()
+                .uri(url)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {});
+    }
+
+    public ProductDto findbyUuid(String uuid) {
+        String url = "http://" + productServiceHost + ":" + productServicePort + "/products" + "/" + uuid;
+        RestClient restClient = RestClient.builder().build();
+        return restClient.get()
+                .uri(url)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {});
+    }
 }
 ```
 
@@ -128,25 +181,8 @@ try {
 }
 ```
 
-## Docker configuration
-
-```yaml
-services:
-  product-service:
-    image: product-service-no-db
-    mem_limit: 512m
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-
-  order-service:
-    build: order-service-no-db
-    image: order-service-no-db
-    mem_limit: 512m
-    ports:
-      - 8080:8080
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-```
+## DTOs
+TODO
 
 ## Resources
 * https://www.baeldung.com/spring-boot-restclient
