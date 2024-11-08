@@ -14,8 +14,8 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    public Optional<Product> findById(Long id) {
-        return productRepository.findById(id);
+    public Optional<Product> findByUuid(String uuid) {
+        return productRepository.findByUuid(uuid);
     }
 
     public Iterable<Product> findAll() {

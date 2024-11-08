@@ -1,6 +1,6 @@
 package com.nbicocchi.order.integration;
 
-import com.nbicocchi.order.dto.Product;
+import com.nbicocchi.order.dto.ProductDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
@@ -20,8 +20,17 @@ public class ProductIntegration {
         this.productServicePort = productServicePort;
     }
 
-    public List<Product> findAll() {
+    public List<ProductDto> findAll() {
         String url = "http://" + productServiceHost + ":" + productServicePort + "/products";
+        RestClient restClient = RestClient.builder().build();
+        return restClient.get()
+                .uri(url)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {});
+    }
+
+    public ProductDto findbyUuid(String uuid) {
+        String url = "http://" + productServiceHost + ":" + productServicePort + "/products" + "/" + uuid;
         RestClient restClient = RestClient.builder().build();
         return restClient.get()
                 .uri(url)

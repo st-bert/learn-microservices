@@ -17,9 +17,9 @@ public class ProductController {
         this.productService = productService;
     }
 
-    @GetMapping("/{id}")
-    public Product findById(@PathVariable Long id) {
-        return productService.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    @GetMapping("/{uuid}")
+    public Product findByUuid(@PathVariable String uuid) {
+        return productService.findByUuid(uuid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping
@@ -32,16 +32,17 @@ public class ProductController {
         return productService.save(product);
     }
 
-    @PutMapping("/{id}")
-    public Product create(@PathVariable Long id, @RequestBody Product product) {
-        productService.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        product.setId(id);
+    @PutMapping("/{uuid}")
+    public Product update(@PathVariable String uuid, @RequestBody Product product) {
+        Optional<Product> optionalProject = productService.findByUuid(uuid);
+        optionalProject.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        product.setId(optionalProject.get().getId());
         return productService.save(product);
     }
 
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        Optional<Product> optionalProject = productService.findById(id);
+    @DeleteMapping("/{uuid}")
+    public void delete(@PathVariable String uuid) {
+        Optional<Product> optionalProject = productService.findByUuid(uuid);
         optionalProject.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         productService.delete(optionalProject.get());
     }

@@ -2,6 +2,7 @@ package com.nbicocchi.product;
 
 import com.nbicocchi.product.persistence.model.Product;
 import com.nbicocchi.product.persistence.repository.ProductRepository;
+import lombok.extern.java.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -12,9 +13,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.util.List;
 import java.util.UUID;
 
+@Log
 @SpringBootApplication
 public class App implements ApplicationRunner {
-    private static final Logger LOG = LoggerFactory.getLogger(App.class);
     ProductRepository productRepository;
 
     public App(ProductRepository productRepository) {
@@ -33,7 +34,7 @@ public class App implements ApplicationRunner {
 
         Iterable<Product> products = productRepository.findAll();
         for (Product product : products) {
-            LOG.info(product.toString());
+            log.info(product.toString());
         }
     }
 }

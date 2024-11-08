@@ -14,14 +14,14 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @EqualsAndHashCode.Include
+    private String uuid;
     private String name;
     private Double weight;
 
-    public Product(String name, Double weight) {
-        this(null, name, weight);
-    }
-
-    public Product(Product product) {
-        this(product.getId(), product.getName(), product.getWeight());
+    public Product(String uuid, String name, Double weight) {
+        this.uuid = uuid;
+        this.name = name;
+        this.weight = weight;
     }
 }
