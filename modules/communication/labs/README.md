@@ -36,6 +36,6 @@
 6. What are message exchanges and queues, and how do they support communication in microservice architectures?
 7. How can you implement request-response communication patterns using RabbitMQ in a microservices architecture?
 8. How can you scale RabbitMQ consumers in a Spring Boot application to handle high volumes of messages?
-9. Describe the difference between partitions and consumer groups.
+9. Describe the differences between partitions, consumer groups, and message routing.
 10. What are DTOs and which is their role in distributed communication?
 11. What is the role of Spring Cloud Stream in terms of abstraction? What are the trade-offs of such an approach compared to native libraries?
