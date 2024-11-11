@@ -1,10 +1,8 @@
 # Asynchronous communications (RabbitMQ)
 
-RabbitMQ is a widely used open-source message broker that facilitates communication between different parts of a distributed system. It enables applications to send and receive messages through a robust and flexible messaging system based on the Advanced Message Queuing Protocol (AMQP). RabbitMQ supports various messaging patterns, making it suitable for various use cases, such as microservices communication, event sourcing, and task queuing.
+RabbitMQ is a widely used open-source message broker that facilitates communication between different parts of a distributed system. It enables applications to send and receive messages through a robust and flexible messaging system based on the Advanced Message Queuing Protocol (AMQP). RabbitMQ supports various messaging patterns, making it suitable for various use cases.
 
 ## Key Components of RabbitMQ
-
-Before diving into the types of queues and exchanges, it is essential to understand the key components of RabbitMQ:
 
 - **Producer**: The application that sends messages to the broker.
 - **Consumer**: The application that receives messages from a queue.
@@ -12,14 +10,6 @@ Before diving into the types of queues and exchanges, it is essential to underst
 - **Exchange**: A routing mechanism that determines how messages are distributed to queues.
 - **Binding**: A link between an exchange and a queue that defines the routing rules for messages.
 - **Routing Key**: The routing key is a message attribute taken into account by the exchange when deciding how to route a message.
-
-## Basic RabbitMQ Message Cycle
-With the basics of the RabbitMQ message cycle in place, let’s now have a look at how the RabbitMQ message cycle works.
-
-* Step 1: An exchange message is sent out by the producer.
-* Step 2: After the communication has been received, the exchange is responsible for sending it. It uses information from the RabbitMQ exchange type to direct the message to the relevant queues and exchanges.
-* Step 3: The queue receives the message and stores it until the consumer receives it.
-* Step 4: Finally, the consumer handles the message.
 
 ![](images/rabbitMQ-message-cycle.webp)
 

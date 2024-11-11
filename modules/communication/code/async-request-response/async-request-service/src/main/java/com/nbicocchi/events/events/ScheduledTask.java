@@ -18,10 +18,10 @@ public class ScheduledTask {
     @Scheduled(fixedRate = 1000)
     public void randomMessage() {
         int index = RANDOM.nextInt(Event.Type.class.getEnumConstants().length);
-        Event<String, Integer> event = new Event<>(
+        Event<String, Double> event = new Event<>(
                 Event.Type.class.getEnumConstants()[index],
                 UUID.randomUUID().toString(),
-                RANDOM.nextInt(100)
+                RANDOM.nextDouble(100)
         );
         messageSender.sendMessage("mathRequest-out-0", event);
     }

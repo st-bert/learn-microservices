@@ -147,6 +147,22 @@ spring.cloud.stream:
             password: guest
 ```
 
+
+- `spring.cloud.stream.bindings`
+    - **`message-out-0`**: This is a defined output binding (a channel) for sending messages.
+        - **`contentType`**: Sets the message format to `application/json`, meaning messages sent to this channel will be serialized as JSON.
+        - **`destination`**: Sets the target destination (queue) for messages to `queue.messages`.
+        - **`binder`**: Specifies `local_rabbit` as the binder to be used, which connects this binding to the defined RabbitMQ setup.
+
+- `spring.cloud.stream.binders`
+    - **`local_rabbit`**: Defines a custom RabbitMQ binder.
+        - **`type`**: Specifies the type as `rabbit`, indicating that RabbitMQ is the message broker.
+        - **`environment`**: Configures the environment-specific RabbitMQ settings.
+            - **`spring.rabbitmq`**: Specifies RabbitMQ connection properties:
+                - **`host`**: The hostname of the RabbitMQ server (`127.0.0.1`, which is localhost).
+                - **`port`**: The port for connecting to RabbitMQ, set to the default `5672`.
+                - **`username`** and **`password`**: Credentials for accessing RabbitMQ, here set to `guest`.
+
 ## Receiving events
 
 To be able to consume events, we need to do the following:
@@ -185,7 +201,7 @@ public class EventReceiver {
 }
 ```
 
-We also need to set up a configuration for the messaging system to be able to consume events. To do this, we need to complete the following steps:
+We also need to set up a configuration for the messaging system to be able to consume events, as shown below.
 
 ```yaml
 spring.cloud.stream:
@@ -208,10 +224,17 @@ spring.cloud.stream:
             password: guest
 ```
 
+- `spring.cloud.stream.function.definition`:
+    - **`messageProcessor`**: Defines a function name, `messageProcessor`, which represents the logic that will process incoming messages. This function will act as a handler for messages received on the configured input channel.
+
+- `spring.cloud.stream.bindings`
+    - **`messageProcessor-in-0`**: Configures an input binding (channel) for the `messageProcessor` function.
+        - **`binder`**: Specifies `local_rabbit` as the binder, linking this binding to the custom RabbitMQ configuration.
+        - **`contentType`**: Sets the message format as `application/json`, meaning the incoming messages will be deserialized from JSON.
+        - **`destination`**: Specifies the message queue to listen to, here set to `queue.messages`. This queue is where RabbitMQ will forward messages for the `messageProcessor` function to handle.
+
 ## Trying out the messaging system
-
-
-In this section, we will test the microservices together with [LavinMQ](https://lavinmq.com/). LavinMQ is an extremely fast Message Broker that handles a large amounts of messages and connections. It implements the AMQP protocol and can run on both a single node or a cluster (more details [here](https://github.com/cloudamqp/lavinmq)).
+[LavinMQ](https://lavinmq.com/) is an extremely fast Message Broker that handles a large amounts of messages and connections. It implements the AMQP protocol (so that it can transparently replace RabbitMQ) and can run on both a single node or a cluster (more details [here](https://github.com/cloudamqp/lavinmq)).
 
 ### One publisher, one consumer
 
@@ -260,15 +283,13 @@ services:
 Start the system landscape with the following commands:
 
 ```
-$ mvn clean package
-$ docker compose build
-$ export COMPOSE_FILE=docker-compose-one-to-one.yml
-$ docker compose up --detach
-...
-$ docker compose down 
+export COMPOSE_FILE=docker-compose-one-to-one.yml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
 ```
 
-Using the [web interface](http://localhost:15672/) of LavinMQ (login: guest/guest) we can see the *messages* exchange receiving 5 events/s and publishing the same events on one (anonymous) queue. 
+Using the [LavinMQ web interface](http://localhost:15672/) (login: guest/guest) we can see the *messages* exchange receiving 5 events/s and publishing the same events on one (anonymous) queue. 
 
 ![](images/rabbitmq-one-consumer.webp)
 
@@ -290,8 +311,10 @@ Using the [web interface](http://localhost:15672/) of LavinMQ (login: guest/gues
 ```
 
 ```
-$ export COMPOSE_FILE=docker-compose-one-to-many.yml
-$ docker compose up --detach
+export COMPOSE_FILE=docker-compose-one-to-many.yml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
 ```
 
 Using the [web interface](http://localhost:15672/) of LavinMQ (login: guest/guest) we can see the *messages* exchange receiving 5 events/s and publishing 15 same events on three different (anonymous) queue.
@@ -300,7 +323,7 @@ Using the [web interface](http://localhost:15672/) of LavinMQ (login: guest/gues
 
 
 ### Consumer groups
-The problem is, if we scale up the number of instances of a message consumer, both instances of the product microservice will consume the same messages. We can avoid this issue by making use of *consumer groups*. Each consumer binding can use the `spring.cloud.stream.bindings.<bindingName>.group` property to specify a group name. Consumers within the same group compete for the same messages.
+The problem is, if we scale up the number of instances of a message consumer, they will all consume the same messages. We can avoid this issue by making use of *consumer groups*. Each consumer binding can use the `spring.cloud.stream.bindings.<bindingName>.group` property to specify a group name. Consumers within the same group compete for the same messages.
 
 Modify `docker-compose.yml` to activate the *groups* profile for the consumers.
 
@@ -332,11 +355,13 @@ spring.cloud.stream:
 Start the landscape with the following commands:
 
 ```
-$ export COMPOSE_FILE=docker-compose-one-to-many-groups.yml
-$ docker compose up --detach
+export COMPOSE_FILE=docker-compose-one-to-many-groups.yml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
 ```
 
-Using the [web interface](http://localhost:15672/) of LavinMQ it is possible to observe that the messages exchange receives 5 events/s and publishes them to a single message group having three consumers. Thus, the output rate is 5 events/s.
+Using the [LavinMQ web interface](http://localhost:15672/), we can exchange that the exchange receives 5 events/s and publishes them to a single message group having three consumers. As a consequence, the output rate is 5 events/s.
 
 ![](images/rabbitmq-consumer-group.webp)
 
@@ -427,13 +452,15 @@ spring.cloud.stream.bindings:
       instanceCount: 3
 ```
 
-The `instanceCount` value represents the total number of application instances between which the data should be partitioned. The `instanceIndex` must be a unique value across the multiple instances, with a value between 0 and `instanceCount` - 1. The instance index helps each application instance to identify the unique partition(s) from which it receives data. It is required by binders using technology that does not support partitioning natively. For example, with RabbitMQ, there is a queue for each partition, with the queue name containing the instance index. With Kafka, if `autoRebalanceEnabled` is true (default), Kafka takes care of distributing partitions across instances, and these properties are not required.
+The `instanceCount` value represents the total number of application instances between which the data should be partitioned. The `instanceIndex` must be a unique value across the multiple instances, with a value between 0 and `instanceCount` - 1. The instance index helps each application instance to identify the unique partition(s) from which it receives data. It is required by binders using technology that does not support partitioning natively. For example, with RabbitMQ, there is a queue for each partition, with the queue name containing the instance index.
 
 Start the system landscape with the following commands:
 
 ```
-$ export COMPOSE_FILE=docker-compose-one-to-many-partitions.yml
-$ docker compose up --detach
+export COMPOSE_FILE=docker-compose-one-to-many-partitions.yml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
 ```
 
 Using the [web interface](http://localhost:15672/) of LavinMQ it is possible to observe that the messages exchange receives 5 events/s and publishes the same events on three different (named) queues. Each event is consumed once by only one consumer. Thus, the output rate is 5 events/s. However, by checking the logs, it is possible to observe how each consumer receives *all* five messages pertaining to same ID.
@@ -533,6 +560,17 @@ spring.cloud.stream:
           binding-routing-key: 'DELETE'
 ```
 
+Start the system landscape with the following commands:
 
+```
+export COMPOSE_FILE=docker-compose-one-to-many-routed.yml
+mvn clean package -Dmaven.test.skip=true
+docker compose build
+docker compose up --detach
+```
+
+Using the [LavinMQ web interface](http://localhost:15672/), it is possible to observe that the messages exchange receives 5 events/s and publishes the same events on three different (anonymous) queues. Each event is consumed once by only one consumer. However, by checking the logs, it is possible to observe how each consumer receives *all* messages of the same type.
+
+![](images/rabbitmq-routed.png)
 
 ## Resources

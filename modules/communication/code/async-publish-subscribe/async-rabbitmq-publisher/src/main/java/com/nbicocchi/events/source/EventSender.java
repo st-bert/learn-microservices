@@ -1,6 +1,7 @@
 package com.nbicocchi.events.source;
 
 import com.nbicocchi.events.model.Event;
+import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -12,10 +13,10 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 import java.util.random.RandomGenerator;
 
+@Log4j2
 @Component
 public class EventSender {
     private static final RandomGenerator RANDOM = RandomGenerator.getDefault();
-    private static final Logger LOG = LoggerFactory.getLogger(EventSender.class);
     private final StreamBridge streamBridge;
 
     public EventSender(StreamBridge streamBridge) {
@@ -39,7 +40,7 @@ public class EventSender {
                     .setHeader("routingKey", event.getEventType().name())
                     .setHeader("partitionKey", event.getKey())
                     .build();
-            LOG.info("Sending message {} to {}", event, bindingName);
+            log.info("Sending message {} to {}", event, bindingName);
             streamBridge.send(bindingName, message);
         }
     }

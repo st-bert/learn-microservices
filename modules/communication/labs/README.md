@@ -32,9 +32,10 @@
 2. How does GraphQL differ from REST when it comes to data retrieval in microservices?
 3. Explain the use of Protocol Buffers (Protobuf) in microservices communication. 
 4. What are the trade-offs between using synchronous REST communication and asynchronous messaging in a microservice system?
-5. How does RabbitMQ ensure message delivery reliability in asynchronous communication?
+5. How does RabbitMQ ensure message delivery reliability in asynchronous communication? 
 6. What are message exchanges and queues, and how do they support communication in microservice architectures?
 7. How can you implement request-response communication patterns using RabbitMQ in a microservices architecture?
 8. How can you scale RabbitMQ consumers in a Spring Boot application to handle high volumes of messages?
-9. What are DTOs and which is their role in distributed communication?
-10. What is the role of Spring Cloud Stream in terms of abstraction? What are the trade-offs of such an approach compared to native libraries?
+9. Describe the difference between partitions and consumer groups.
+10. What are DTOs and which is their role in distributed communication?
+11. What is the role of Spring Cloud Stream in terms of abstraction? What are the trade-offs of such an approach compared to native libraries?
