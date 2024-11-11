@@ -571,6 +571,6 @@ docker compose up --detach
 
 Using the [LavinMQ web interface](http://localhost:15672/), it is possible to observe that the messages exchange receives 5 events/s and publishes the same events on three different (anonymous) queues. Each event is consumed once by only one consumer. However, by checking the logs, it is possible to observe how each consumer receives *all* messages of the same type.
 
-![](images/rabbitmq-routed.png)
+![](images/rabbitmq-routed.webp)
 
 ## Resources

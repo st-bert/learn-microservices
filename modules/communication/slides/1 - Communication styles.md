@@ -17,7 +17,7 @@ The microservice community promotes the philosophy of **smart endpoints and dumb
 
 This approach avoids complex middleware (like ESBs in traditional SOA) by making the pipes solely responsible for message transport, not transformation or orchestration. The result is loose coupling, better scalability, resilience, and decentralized governance, as services can evolve independently without relying on a complex communication layer.
 
-![](images/dumb-pipes.png)
+![](images/dumb-pipes.webp)
 
 
 

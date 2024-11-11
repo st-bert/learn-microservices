@@ -19,7 +19,7 @@
 
 ## gRPC (Google Remote Procedure Call)
 
-![](images/rest-vs-grpc.png)
+![](images/rest-vs-grpc.webp)
 
 **Key Features:**
 
@@ -43,7 +43,7 @@
 
 ## GraphQL
 
-![](images/rest-vs-graphql.jpg)
+![](images/rest-vs-graphql.webp)
 
 **Key Features:**
 
