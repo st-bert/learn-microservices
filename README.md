@@ -29,10 +29,10 @@ Your pull requests are very welcome! To contribute, please refer to [this](https
 * Monolithic and distributed architectural styles
 * The transition towards microservices architectures
 
-[M2 Tools: Java, Maven, Spring Boot, JMeter](modules/tools)
+[M2 Tools: Maven, Spring Boot](modules/tools)
+* Introduction to Spring Boot as microservice chassis
 * Building a basic layered microservice with Spring Boot
-* Project packaging with Maven (one or multiple services per project)
-* Testing microservices with JMeter
+* Packaging a project with Maven
 
 [M3 Containerization and orchestration](modules/containerization)
 * Containerization vs virtualization
