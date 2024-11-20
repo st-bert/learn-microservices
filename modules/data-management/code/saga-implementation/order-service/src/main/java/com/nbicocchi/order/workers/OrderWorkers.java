@@ -1,6 +1,7 @@
 package com.nbicocchi.order.workers;
 
 import com.nbicocchi.order.pojos.DepositDetail;
+import com.nbicocchi.order.pojos.FraudCheckResult;
 import com.nbicocchi.order.service.FraudCheckService;
 import com.netflix.conductor.sdk.workflow.task.InputParam;
 import com.netflix.conductor.sdk.workflow.task.WorkerTask;
@@ -9,17 +10,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.stream.IntStream;
 
 @AllArgsConstructor
 @Component
 @Slf4j
-public class ConductorWorkers {
+public class OrderWorkers {
 
     private final FraudCheckService fraudCheckService;
     private final Random random = new Random();

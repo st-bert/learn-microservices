@@ -3,7 +3,7 @@ package com.nbicocchi.order.controller;
 import com.nbicocchi.order.pojos.DepositDetail;
 import com.nbicocchi.order.service.FraudCheckService;
 import com.nbicocchi.order.service.WorkflowService;
-import com.nbicocchi.order.workers.FraudCheckResult;
+import com.nbicocchi.order.pojos.FraudCheckResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

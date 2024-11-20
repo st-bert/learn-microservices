@@ -1,13 +1,13 @@
-package com.nbicocchi.order.service;
+package com.nbicocchi.payment.service;
 
-import com.nbicocchi.order.pojos.DepositDetail;
-import com.nbicocchi.order.pojos.FraudCheckResult;
+import com.nbicocchi.payment.pojos.DepositDetail;
+import com.nbicocchi.payment.pojos.FraudCheckResult;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
-import static com.nbicocchi.order.pojos.FraudCheckResult.Result.FAIL;
-import static com.nbicocchi.order.pojos.FraudCheckResult.Result.PASS;
+import static com.nbicocchi.payment.pojos.FraudCheckResult.Result.FAIL;
+import static com.nbicocchi.payment.pojos.FraudCheckResult.Result.PASS;
 
 @Service
 public class FraudCheckService {
