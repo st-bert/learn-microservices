@@ -1,6 +1,6 @@
 package com.nbicocchi.order.service;
 
-import com.nbicocchi.order.pojos.DepositDetail;
+import com.nbicocchi.order.persistence.model.Order;
 import com.netflix.conductor.client.http.WorkflowClient;
 import com.netflix.conductor.common.metadata.workflow.StartWorkflowRequest;
 
@@ -15,24 +15,18 @@ import java.util.Map;
 @AllArgsConstructor
 @Service
 public class WorkflowService {
-
     private final WorkflowClient workflowClient;
-
-    public Map<String, Object> startDepositWorkflow(DepositDetail depositDetail) {
-        // docs-marker-start-1
-
+    public Map<String, Object> startOrderFlow(Order order) {
         StartWorkflowRequest request = new StartWorkflowRequest();
-        request.setName("deposit-payment-nb");
+        request.setName("order-saga");
         Map<String, Object> inputData = new HashMap<>();
-        inputData.put("amount", depositDetail.getAmount());
-        inputData.put("accountId", depositDetail.getAccountId());
+        inputData.put("code", order.getCode());
+        inputData.put("productIds", order.getProductIds());
+        inputData.put("customerId", order.getCustomerId());
+        inputData.put("creditCardNumber", order.getCreditCardNumber());
+        inputData.put("status", order.getStatus());
         request.setInput(inputData);
-
         String workflowId = workflowClient.startWorkflow(request);
-        log.info("Workflow id: {}", workflowId);
-
-        // docs-marker-end-1
         return Map.of("workflowId", workflowId);
     }
-
 }

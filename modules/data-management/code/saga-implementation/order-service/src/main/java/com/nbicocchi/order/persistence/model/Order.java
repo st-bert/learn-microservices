@@ -3,9 +3,6 @@ package com.nbicocchi.order.persistence.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @Setter
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -13,22 +10,27 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 public class Order {
+
+    public enum OrderStatus {
+        PENDING, APPROVED, REJECTED
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(unique = true, nullable = false, updatable = false)
     @EqualsAndHashCode.Include
     private String code;
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "order_id")
-    private Set<Product> products = new HashSet<>();
-    @ManyToOne
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    private String productIds;
+    private String customerId;
+    private String creditCardNumber;
+    private OrderStatus status;
 
-    public Order(String code, Set<Product> products, Customer customer) {
+    public Order(String code, String productIds, String customerId, String creditCardNumber) {
         this.code = code;
-        this.products = products;
-        this.customer = customer;
+        this.productIds = productIds;
+        this.customerId = customerId;
+        this.creditCardNumber = creditCardNumber;
+        this.status = OrderStatus.PENDING;
     }
 }
