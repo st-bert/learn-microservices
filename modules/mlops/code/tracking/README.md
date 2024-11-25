@@ -14,7 +14,7 @@ The system integrates with **MLflow** for:
 
 ## Core Components
 
-The system comprises four primary containerized microservices:
+The system comprises five primary containerized microservices:
 
 - **MySQL Database**: Stores and organizes all relevant experiment data;
 - **Simulator**: Generates simulated *training*, *testing*, and *production* datasets;
@@ -24,21 +24,16 @@ The system comprises four primary containerized microservices:
 
 This setup enables comprehensive tracking and monitoring of machine learning models in a production-like environment, supporting both experimentation and long-term model maintenance.
 
+Here is the workflow of the system:
+```
+Training Data → Multiple Experiments → Track Results → Select Best Model → Deploy → Monitor
+```
+
 ## Index
 - [MLModelTrackingMonitoring](#ML Model Tracking and Monitoring)
-    - [Index](#index)
-    - [Installation](#installation)
     - [Dependencies](#dependencies)
     - [Usage](#usage)
     - [References](#references)
-
-
-## Installation
-To clone the repository:
-```
-git clone https://github.com/alessandromonteleone/MLModelTrackingwithinMicroservicesEnvironments.git
-```
-
 
 ## Dependencies
 To create a virtual environment and install all required dependencies:
@@ -49,13 +44,32 @@ python -m venv venv && source venv/bin/activate && pip install -r requirements.t
 Each microservice also has its own `requirements.txt` file, along with a `config.yml` configuration file and a `Dockerfile` to build the corresponding Docker container.
 
 ## Usage
+Please ensure that you have Docker installed on your machine before proceeding and that the Docker daemon is running.
+
 To start and stop all containers in background mode:
 
-- `./launch.sh`
+```
+chmod +x launch.sh
+./launch.sh
+```
 
-To test all the micro-services *API*, please download and install `Postman` to send requests.
+If you encounter a platform-specific issue, you may need to change the platform in the docker-compose.yml file.
+
+The system will start the following services:
+- MySQL Database (port 3306)
+- ML Model Service (port 5001)
+- Tracking Service (port 5002)
+- Monitoring Service (port 5003)
+- Simulator Service (port 5004)
+
+To test the microservices APIs, use Postman to send requests. A complete Postman collection is provided in the `postman` directory.
+Each postman request corresponds to a specific step in the [5 - Project Emulation Steps.md](../../slides/5%20-%20Project%20Emulation%20Steps.md) file.
+
+For detailed API documentation, see the [API Documentation.md](../../slides/extras/API.md) file.
 
 
 ## References
 - [Docker](https://www.docker.com/)
 - [Postman](https://www.postman.com/)
+- [MLflow](https://www.mlflow.org/)
+- [Evidently AI](https://evidentlyai.com/)

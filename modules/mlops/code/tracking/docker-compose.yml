@@ -1,6 +1,7 @@
 
 services:
   db:
+    platform: linux/amd64
     image: mysql:5.7
     container_name: ml_model_tracking_db
     restart: always
@@ -17,6 +18,7 @@ services:
       retries: 60
 
   mlflow_db:
+    platform: linux/amd64
     image: mysql:5.7
     container_name: ml_model_tracking_mlflow_db
     restart: always
@@ -36,7 +38,7 @@ services:
     build: ./microservices/simulator
     container_name: ml_model_tracking_simulator
     ports:
-      - "5000:5000"
+      - "5004:5004"
     links:
       - db
     depends_on:

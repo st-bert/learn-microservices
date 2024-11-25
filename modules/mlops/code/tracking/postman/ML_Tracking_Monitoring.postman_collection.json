@@ -1,22 +1,19 @@
 {
 	"info": {
-		"_postman_id": "7de011b7-8ecb-4b5d-8551-c2bd945961a3",
-		"name": "ML_Tracking_Monitoring",
+		"_postman_id": "80240b54-e069-4ddb-8114-7309f56bd286",
+		"name": "MLOps_Microservices",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "20245112"
+		"_exporter_id": "39304726"
 	},
 	"item": [
 		{
-			"name": "Simulator",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
+			"name": "1.1_Load_Training_Set",
 			"request": {
-				"method": "GET",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "",
+					"raw": "{\n  \"set_name\": \"training\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -24,7 +21,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:5000/root/simulator",
+					"raw": "http://127.0.0.1:5004/root/simulator",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -32,7 +29,7 @@
 						"0",
 						"1"
 					],
-					"port": "5000",
+					"port": "5004",
 					"path": [
 						"root",
 						"simulator"
@@ -42,7 +39,72 @@
 			"response": []
 		},
 		{
-			"name": "ML Model",
+			"name": "1.2_Load_Test_Set",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"set_name\": \"testing\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5004/root/simulator",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5004",
+					"path": [
+						"root",
+						"simulator"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2_Inititate_Model_Optimization",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"request_information\": \"optimization\",\n  \"experiment_name\": \"wine_test_1\",\n  \"experiment_description\": \"Grid Search Optimization - Cross Validation Performance\",\n  \"experiment_owner\": \"Ale\",\n\n  \"models\": [\"LogisticRegression\", \"RandomForest\", \"SVC\"],\n  \"hyperparameters\": {\n    \"LogisticRegression\": {\n      \"C\": [0.1, 1],\n      \"solver\": [\"liblinear\"]\n    },\n    \"RandomForest\": {\n      \"n_estimators\": [ 1, 3],\n      \"max_depth\": [null, 3],\n      \"min_samples_split\": [2, 5]\n    },\n    \"SVC\": {\n      \"C\": [0.1, 10],\n      \"kernel\": [\"linear\", \"rbf\"],\n      \"gamma\": [\"scale\", \"auto\"]\n    }\n  },\n\n  \"scoring\": \"accuracy\",\n  \"cv\": 5\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/model_management",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"model_management"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3_Get_Every_Experiments",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
@@ -58,29 +120,6 @@
 						}
 					}
 				},
-				"url": {
-					"raw": "http://127.0.0.1:5001/root/ml",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "5001",
-					"path": [
-						"root",
-						"ml"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Tracking Get Experiments",
-			"request": {
-				"method": "GET",
-				"header": [],
 				"url": {
 					"raw": "http://127.0.0.1:5002/root/tracking/experiments",
 					"protocol": "http",
@@ -101,10 +140,22 @@
 			"response": []
 		},
 		{
-			"name": "Tracking Get Runs",
+			"name": "4_Get_Runs_Specific_Experiment",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
 					"raw": "http://127.0.0.1:5002/root/tracking/runs?experiment_id=1",
 					"protocol": "http",
@@ -131,174 +182,13 @@
 			"response": []
 		},
 		{
-			"name": "Tracking Delete Experiment",
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:5002/root/tracking/experiments?experiment_id=4",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "5002",
-					"path": [
-						"root",
-						"tracking",
-						"experiments"
-					],
-					"query": [
-						{
-							"key": "experiment_id",
-							"value": "4"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Tracking Delete run",
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:5002/root/tracking/runs?experiment_id=10&run_id=e90119a0c5e24dc28e1e112c00da4ec6",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "5002",
-					"path": [
-						"root",
-						"tracking",
-						"runs"
-					],
-					"query": [
-						{
-							"key": "experiment_id",
-							"value": "10"
-						},
-						{
-							"key": "run_id",
-							"value": "e90119a0c5e24dc28e1e112c00da4ec6"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Simulator Load Data",
+			"name": "5.1_General_Informations_Experiment",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"set_name\": \"training\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://127.0.0.1:5000/root/simulator",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "5000",
-					"path": [
-						"root",
-						"simulator"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "ML model train-test-prod",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"dataset\":\"testing\"\r\n}\r\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://127.0.0.1:5001/root/ml",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "5001",
-					"path": [
-						"root",
-						"ml"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "ML model optimization",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"request_information\": \"optimization\",\r\n  \"experiment_name\": \"wine_test\",\r\n  \"experiment_description\": \"Grid Search Optimization - Cross Validation Performance\",\r\n  \"experiment_owner\": \"Ale\",\r\n\r\n  \"models\": [\"LogisticRegression\", \"RandomForest\", \"SVC\"],\r\n  \"hyperparameters\": {\r\n    \"LogisticRegression\": {\r\n      \"C\": [0.1, 1],\r\n      \"solver\": [\"liblinear\"]\r\n    },\r\n    \"RandomForest\": {\r\n      \"n_estimators\": [ 1, 3],\r\n      \"max_depth\": [null, 3],\r\n      \"min_samples_split\": [2, 5]\r\n    },\r\n    \"SVC\": {\r\n      \"C\": [0.1, 10],\r\n      \"kernel\": [\"linear\", \"rbf\"],\r\n      \"gamma\": [\"scale\", \"auto\"]\r\n    }\r\n  },\r\n\r\n  \"scoring\": \"accuracy\",\r\n  \"cv\": 5\r\n}\r\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://127.0.0.1:5002/root/tracking/model_management",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "5002",
-					"path": [
-						"root",
-						"tracking",
-						"model_management"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Tracking Experiment",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"experiment_id\": \"1\",\r\n    \"request_information\": \"general\"\r\n}",
+					"raw": "{\n    \"experiment_id\": \"1\",\n    \"request_information\": \"general\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -325,13 +215,79 @@
 			"response": []
 		},
 		{
-			"name": "Tracking  Runs",
+			"name": "5.2_Best_Model_Informations_Experiment",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"experiment_id\": \"1\",\r\n    \"run_id\": \"0ae0517c697e4f39a0ea7358ee8f09c6\",\r\n    \"request_information\": \"parameters\",\r\n    \"type\": \"model\"\r\n}",
+					"raw": "{\n    \"experiment_id\": \"1\",\n    \"request_information\": \"best_model\",\n    \"filter\":[\"model_accuracy\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/experiments",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"experiments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5.3_Statistic_Informations_Experiment",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"experiment_id\": \"1\",\n    \"request_information\": \"statistics\",\n    \"filter\": [\"all\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/experiments",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"experiments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6.1_Data_Parameters_Specific_Run",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"experiment_id\": \"1\",\n    \"run_id\": \"357e4d6c5b914e88aadb2c37e60e665e\",\n    \"request_information\": \"parameters\",\n    \"type\": \"data\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -358,13 +314,145 @@
 			"response": []
 		},
 		{
-			"name": "ML Set Model",
+			"name": "6.2_Model_Parameters_Specific_Run",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"request_information\":\"setting\",\r\n    \"run_id\":\"5f69f7ee0507453e9787991521adeb82\"\r\n}",
+					"raw": "{\n    \"experiment_id\": \"1\",\n    \"run_id\": \"357e4d6c5b914e88aadb2c37e60e665e\",\n    \"request_information\": \"parameters\",\n    \"type\": \"model\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/runs",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"runs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6.3_GridSearch_Parameters_Specific_Run",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"experiment_id\": \"1\",\n    \"run_id\": \"357e4d6c5b914e88aadb2c37e60e665e\",\n    \"request_information\": \"parameters\",\n    \"type\": \"grid_search\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/runs",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"runs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6.4_System_Metrics_Specific_Run",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"experiment_id\": \"1\",\n    \"run_id\": \"357e4d6c5b914e88aadb2c37e60e665e\",\n    \"request_information\": \"metrics\",\n    \"type\": \"system\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/runs",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"runs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6.5_Model_Metrics_Specific_Run",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"experiment_id\": \"1\",\n    \"run_id\": \"357e4d6c5b914e88aadb2c37e60e665e\",\n    \"request_information\": \"metrics\",\n    \"type\": \"model\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/runs",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"runs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7.1_Deploy_Model_From_Registry",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"request_information\":\"setting\",\n    \"run_id\":\"357e4d6c5b914e88aadb2c37e60e665e\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -391,13 +479,174 @@
 			"response": []
 		},
 		{
-			"name": "Monitoring_report_tests",
+			"name": "7.2_Deploy_New_Model",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"metric\": \"report\"\r\n}",
+					"raw": "{\n    \"model_name\": \"RandomForest\",\n    \"hyperparameters\": {\n        \"n_estimators\": 100,\n        \"max_depth\": 10,\n        \"min_samples_split\": 2,\n        \"min_samples_leaf\": 1\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/root/ml/set_model",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"root",
+						"ml",
+						"set_model"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8.1_Train_Model",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"dataset\":\"training\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/root/ml",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"root",
+						"ml"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8.2_Evaluate_Model",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"dataset\":\"testing\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/root/ml",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"root",
+						"ml"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9.1_Load_Production_Set",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"set_name\": \"production\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5004/root/simulator",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5004",
+					"path": [
+						"root",
+						"simulator"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9.2_Evaluate_Model_Production",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"dataset\": \"production\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/root/ml",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"root",
+						"ml"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10.1_Monitoring_Report",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"metric\": \"report\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -423,13 +672,13 @@
 			"response": []
 		},
 		{
-			"name": "Monitoring_summary",
+			"name": "10.2_Monitoring_Tests",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"metric\": \"report\"\r\n}",
+					"raw": "{\n  \"metric\": \"tests\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -449,6 +698,120 @@
 					"path": [
 						"root",
 						"monitoring"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10.3_Monitoring_Summary",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"metric\": \"summary\",\n  \"tests\": {\n    \"data_drift\": true,\n    \"data_quality\": true,\n    \"data_stability\": true,\n    \"no_target_performance\": true,\n    \"multi_class_classification\": true\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5003/root/monitoring",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5003",
+					"path": [
+						"root",
+						"monitoring"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "11.1_Delete_Experiment",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/experiments?experiment_id=1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"experiments"
+					],
+					"query": [
+						{
+							"key": "experiment_id",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "11.2_Delete_Run",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5002/root/tracking/runs?experiment_id=1&run_id=357e4d6c5b914e88aadb2c37e60e665e",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5002",
+					"path": [
+						"root",
+						"tracking",
+						"runs"
+					],
+					"query": [
+						{
+							"key": "experiment_id",
+							"value": "1"
+						},
+						{
+							"key": "run_id",
+							"value": "357e4d6c5b914e88aadb2c37e60e665e"
+						}
 					]
 				}
 			},

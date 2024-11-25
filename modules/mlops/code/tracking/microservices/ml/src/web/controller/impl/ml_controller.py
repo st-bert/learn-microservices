@@ -11,7 +11,7 @@ class MLController(IController):
     def __init__(
             self,
             ml_service: IService,
-            app_host="127.0.0.1", app_port=5000, app_debug=False, base_url="/root", service_url="/model",
+            app_host="127.0.0.1", app_port=5000, app_debug=False, base_url="/root", service_url="/ml",
             db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
     ):
         self.ml_service = ml_service
