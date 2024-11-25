@@ -1,51 +1,33 @@
-# 1. Introduction
+# 2. MLflow for Tracking Machine Learning Experiments
 
-MLflow is an open-source platform designed for managing the machine learning experiment lifecycle, aimed at simplifying and optimizing the development, monitoring, and deployment processes of models. With the goal of making experiment management more systematic and organized, MLflow enables users to log, monitor, and analyze every aspect of their machine learning activities, thereby promoting a data-driven approach.
-
-In the context of machine learning, effectively managing various experiments, the parameters used, and the results obtained is essential. The challenges associated with this task can include:
-
-- **Reproducibility**: Ensuring that experiments can be replicated in the future with consistent results.
-- **Comparison**: Evaluating the effectiveness of different model configurations and parameters.
-- **Documentation**: Maintaining a detailed record of decisions and outcomes for future reference.
-
-MLflow addresses these challenges by offering a comprehensive suite of tools and features that simplify the lives of data science teams. Its intuitive interface and logging capabilities facilitate collaboration among team members and make it easier to share and review results.
-
-MLflow seamlessly integrates into the **MLOps** (Machine Learning Operations) paradigm, an approach that combines development and operational practices to ensure efficiency and quality in machine learning projects. Through MLOps, MLflow allows for the management of the entire model lifecycle, from design and development to deployment and post-launch monitoring. This approach not only enhances consistency and transparency in the development process but also fosters a culture of collaboration and continuous improvement among data science and IT teams.
-
-![](images/mlflow-logo.webp)
-
----
-
-# 2. MLflow in Tracking Machine Learning Experiments
-
-The main feature of MLflow is **experiment tracking**. This functionality allows users to log and track parameters, metrics, and artifacts of each experiment. This way, users can effectively monitor model performance and compare different configurations, helping to maintain transparency in the development process and facilitating the sharing of results with the team.
+MLflow's primary feature is **experiment tracking**. This functionality enables users to log and track parameters, metrics, and artifacts for each experiment. Users can effectively monitor model performance and compare different configurations, maintaining transparency in the development process and facilitating team collaboration through shared results.
 
 ## 1. Metadata and Artifacts in MLflow
 
-MLflow distinguishes between two main types of information: **metadata** and **artifacts**. This distinction is essential for understanding how experiment data is managed and stored.
+MLflow distinguishes between two main types of information: **metadata** and **artifacts**. This distinction is crucial for understanding how experiment data is managed and stored.
 
 ### Metadata
-Metadata includes all structured information related to experiments and runs. This data is typically stored in the **database** configured for MLflow and includes:
+Metadata encompasses all structured information related to experiments and runs. This data is stored in the MLflow-configured **database** and includes:
 
-- **Parameters**: Settings used to configure the models, such as training hyperparameters.
-- **Metrics**: Performance measures calculated during or after training, such as accuracy, F1 score, or execution time.
-- **Tags**: Labels that can be assigned to experiments and runs to add descriptive information (e.g., the type of experiment or the owner).
-- **Run information**: Specific details for each execution, such as the experiment ID, timestamp, configuration, and final status.
+- **Parameters**: Model configuration settings, such as training hyperparameters
+- **Metrics**: Performance measurements calculated during or after training (e.g., accuracy, F1 score, execution time)
+- **Tags**: Labels assigned to experiments and runs for descriptive purposes (e.g., experiment type, owner)
+- **Run Information**: Execution details, including experiment ID, timestamp, configuration, and final status
 
-This data is saved in a **relational database** (like MySQL, PostgreSQL, or SQLite), facilitating the search, filtering, and comparison of runs and their results.
+This data is stored in a **relational database** (such as MySQL, PostgreSQL, or SQLite), enabling efficient searching, filtering, and comparison of runs and their results.
 
 ### Artifacts
-Artifacts, on the other hand, are the files generated during the runs and include larger, unstructured items such as:
+Artifacts are files generated during runs and include larger, unstructured items such as:
 
-- **Trained models**: Files containing the saved models.
-- **Graphs**: Visual representations of performance, such as accuracy or loss curves.
-- **Configuration files**: Scripts or other files necessary to reproduce the experiment.
+- **Trained Models**: Saved model files
+- **Graphs**: Performance visualizations, such as accuracy or loss curves
+- **Configuration Files**: Scripts and other files needed to reproduce the experiment
 
-Artifacts **are not stored in the database** since they take up more space and require different management. Instead, they are stored in a separate storage space, which can be a local folder or a cloud storage service.
+Artifacts are stored separately from the database due to their size and management requirements. They reside in dedicated storage space, either in a local folder or cloud storage service.
 
 ![](images/mlflow-metadata.webp)
 
-This separation between metadata and artifacts optimizes the efficiency of MLflow and allows for a more scalable management of experiment data.
+This separation between metadata and artifacts optimizes MLflow's efficiency and enables scalable experiment data management.
 
 ---
 
@@ -53,7 +35,7 @@ This separation between metadata and artifacts optimizes the efficiency of MLflo
 
 ### 1. Automatic Database Creation
 
-Before starting experiments and runs, MLflow requires a database where all metadata related to the experiments will be stored. This database can be configured to be automatically generated by MLflow, ensuring that all necessary tables for tracking executions and associated information are created. 
+Before starting experiments and runs, MLflow requires a database to store all metadata related to the experiments. MLflow can be configured to automatically generate this database, ensuring that all necessary tables for tracking executions and associated information are created.
 
 To enable automatic database creation, simply configure MLflow to use an external database, such as MySQL.
 
@@ -63,76 +45,75 @@ mlflow.set_tracking_uri("mysql+pymysql://username:password@host:port/db_name")
 
 In the code above:
 
-- `mysql` indicates the type of database to connect to, in this case, MySQL. MLflow uses SQLAlchemy, a Python toolkit for managing database connections, and `mysql` is specified as the type of database to connect to.
+- `mysql` indicates the type of database to connect to, in this case, MySQL. MLflow uses SQLAlchemy, a Python toolkit for managing database connections, and specifies `mysql` as the database type.
 
-- `pymysql` is the specific driver for connecting Python to MySQL. It is a library that handles communication between the Python language and the MySQL database, allowing Python code to send and receive data from the database.
+- `pymysql` is the specific driver for connecting Python to MySQL. It is a library that handles communication between Python and the MySQL database, enabling Python code to send and receive data from the database.
 
-Once configured, MLflow will check for the presence of the database and the following tables upon the first request. If they do not exist, they will be created automatically in the specified database. Below is an overview of the main tables generated.
+Upon first request, MLflow checks for the database and required tables. If they don't exist, MLflow automatically creates them in the specified database. Here's an overview of the main tables:
 
 1. **alembic_version**  
-   This table is used internally by MLflow to track the version of the database schema. It helps maintain compatibility for potential database updates with new versions of MLflow.
+   An internal MLflow table that tracks database schema versions, ensuring compatibility with new MLflow versions.
 
 2. **dataset**  
-   Contains information about the datasets used in experiments, helping to maintain the link between models and the data they were trained on.
+   Stores information about datasets used in experiments, maintaining relationships between models and their training data.
 
 3. **experiment_tags**  
-   This table stores tags associated with experiments, allowing for annotation of each experiment with useful details like owner, description, or other custom information.
+   Stores experiment-associated tags, enabling annotation with details such as owner, description, and custom information.
 
 4. **experiments**  
-   Stores basic information about each experiment, such as name, ID, and current status (e.g., active or archived).
+   Contains basic experiment information, including name, ID, and status (e.g., active or archived).
 
 5. **input_tags**  
-   Contains specific tags for the inputs of each run or experiment, allowing for more detailed organization of input data.
+   Stores specific tags for run or experiment inputs, enabling detailed input data organization.
 
 6. **input**  
-   Gathers information about the inputs used in experiments, recording details like the type and format of the initial data.
+   Records information about experiment inputs, including type and format of initial data.
 
 7. **latest_metrics**  
-   Stores the most recent metrics calculated for each run of an experiment, facilitating access to the most up-to-date results without having to search through all historical records.
+   Maintains the most recent metrics for each experiment run, providing quick access to current results without searching historical records.
 
 8. **metrics**  
-   Preserves all metrics logged during the runs of experiments, including data such as precision, accuracy, execution time, and other performance measures of the runs.
+   Stores all logged metrics from experiment runs, including precision, accuracy, execution time, and other performance measures.
 
 9. **model_version_tags**  
-   Allows for associating tags with registered model versions, facilitating the organization and identification of various model versions.
+   Enables tag association with registered model versions, supporting organization and identification of different versions.
 
 10. **model_versions**  
-    Stores details of each registered model version, including references to the model, version ID, and any deployment information.
+    Records details of each registered model version, including model references, version IDs, and deployment information.
 
 11. **params**  
-    Logs all parameters associated with each run of an experiment, such as specific hyperparameters and configured values for each model execution.
+    Records all experiment run parameters, including hyperparameters and configured values for each model execution.
 
 12. **registered_model_aliases**  
-    Contains aliases for registered models, making it easier to manage models with alternative or more descriptive names.
+    Stores aliases for registered models, simplifying management of models with alternative names.
 
 13. **registered_model_tags**  
-    Allows tags to be assigned to registered models, adding useful information about each model, such as version, model type, or other notes.
+    Enables tag assignment to registered models, storing information such as version, type, and additional notes.
 
 14. **registered_models**  
-    Manages basic information for registered models, such as name, status, and model description.
+    Maintains core information about registered models, including name, status, and description.
 
 15. **runs**  
-    This table logs each execution (run) of an experiment, retaining details about the configuration, parameters, timestamps, and outcomes of the runs.
+    Records each experiment execution, storing configuration details, parameters, timestamps, and outcomes.
 
 16. **tags**  
-    Enables the assignment of tags to both experiments and individual runs, facilitating the categorization and search of executions or experiments based on specific tags.
+    Supports tag assignment to experiments and individual runs, facilitating categorization and search capabilities.
 
 17. **trace_info**  
-    Contains tracking information to better monitor the origin of the data or events related to each experiment.
+    Stores tracking information for monitoring data origins and experiment-related events.
 
 18. **trace_request_metadata**  
-    This table collects metadata for specific requests related to the experiments, such as the source of data requests or the type of event.
+    Records metadata for experiment-related requests, including data source and event type information.
 
 19. **trace_tags**  
-    Gathers specific tags for tracking information, allowing for the categorization and filtering of traces for more detailed analysis.
-
+    Stores tracking-specific tags, enabling detailed trace categorization and filtering.
 ---
 
-### 2. Creation of experiments
+### 2. Creating Experiments
 
 In MLflow, an **experiment** represents a working context for a set of related **runs**. Each experiment has a unique ID that provides access to all associated runs and related information.
 
-To create an experiment, the following function is used:
+To create an experiment, use the following function:
 
 ```python
 experiment_id = mlflow.create_experiment(
@@ -143,24 +124,23 @@ experiment_id = mlflow.create_experiment(
 
 The parameters of the function are:
 
-- **name**: the name of the experiment, which must be a unique string.
-- **artifact_location**: the location where run artifacts are stored. If not provided, the server will choose an appropriate default value.
-- **tags**: an optional dictionary of keys and string values to be set as tags on the experiment.
+- **name**: The name of the experiment, which must be a unique string.
+- **artifact_location**: The location where run artifacts are stored. If not provided, the server will choose an appropriate default value.
+- **tags**: An optional dictionary of keys and string values to be set as tags on the experiment.
 
-In the example, the experiment is created with a specific name and enriched with useful tags, such as the description and owner of the experiment. These tags are crucial to facilitate the search and organization of experiments within the platform.
+In the example, the experiment is created with a specific name and enriched with useful tags, such as the description and owner of the experiment. These tags are crucial for facilitating the search and organization of experiments within the platform.
 
-After the experiment is created, it is assigned a unique ID, which is critical to retain for later access to runs and associated information.
+After creating the experiment, MLflow assigns it a unique ID. This ID is essential to retain as it provides access to all runs and associated information for that experiment.
 
 ### 3. Creation of Runs
-
-In MLflow, a **run** represents a single execution of an activity related to a machine learning model within an experiment. 
+In MLflow, a **run** represents a single execution of an activity related to a machine learning model within an experiment.
 This activity may include:
-- the training of a model,
-- the evaluation of its performance,
-- the tuning of hyperparameters
-- the generation of predictions. 
+- training a model
+- evaluating its performance  
+- tuning hyperparameters
+- generating predictions
 
-Each run is associated with a specific experiment and allows all details related to that activity to be recorded.
+Each run is associated with a specific experiment and records all details related to that activity.
 
 ![](images/mlflow-exp-run.webp)
 
@@ -172,23 +152,23 @@ with mlflow.start_run(experiment_id=experiment_id, run_name="Nome della Run) as 
 
 The parameters that can be specified in the function are:
 
-- **experiment_ids** or **experiment_names** : List of experiment IDs from which to search for runs. You can specify only IDs or names, but not both.
+- **experiment_ids** or **experiment_names**: List of experiment IDs from which to search for runs. You can specify either IDs or names, but not both.
   
-- **filter_string**: A string to filter the results of the runs. For example, you can search for runs with specific metrics.
+- **filter_string**: A string to filter the run results. For example, you can search for runs with specific metrics.
 
-- **run_view_type**: Specifies the view type of runs (active, deleted, or all).
+- **run_view_type**: Specifies which type of runs to view (active, deleted, or all).
 
 - **max_results**: Maximum number of runs to return (default: 100,000).
 
-- **order_by**: List of columns to order the results (e.g., “metrics.rmse”).
+- **order_by**: List of columns by which to order the results (e.g., "metrics.rmse").
 
-- **search_all_experiments**: Boolean to search all experiments.
+- **search_all_experiments**: Boolean indicating whether to search across all experiments.
 
-- **output_format**: Specifies output format (can be `pandas` or `list`).
+- **output_format**: Specifies the output format (can be `pandas` or `list`).
 
-A list of `mlflow.entities.Run` objects or, if specified, a `pandas.DataFrame` with run information will be returned.
+The function returns either a list of `mlflow.entities.Run` objects or, if specified, a `pandas.DataFrame` containing run information.
 
-During a run, you can also record contextual information using custom tags. For example, you can set tags that describe the type of experiment or model used, as in the following example:
+During a run, you can also record contextual information using custom tags. For example, you can set tags to describe the type of experiment or model being used, as shown in the following example:
 
 ```python
 mlflow.set_tag("experiment_type", "GridSearch_CrossValidation")
@@ -196,13 +176,13 @@ mlflow.set_tag("model_type", model_name)
 ```
 ---
 
-## 3. Logging of Runs Information
+## 3. Logging Run Information
 
-After starting a run, you can log several pieces of information that are critical for analyzing and comparing model performance. In MLflow, you can log various types of data during a run, including:
+After starting a run, you can log several types of information that are critical for analyzing and comparing model performance. In MLflow, you can log various types of data during a run, including:
 
 ### 1. Parameters
 
-You can record not only the hyperparameters used to train the model, but also other aspects such as parameters of the dataset and process configurations.
+You can record not only the hyperparameters used to train the model but also other aspects such as dataset parameters and process configurations.
 
 ```python
 # Model parameters log
@@ -221,7 +201,7 @@ mlflow.log_param("grid_search_cv_folds", cv)
 
 ### 2. Metrics
 
-Model performance results can be recorded here for comparison across runs, but other metrics can also be considered that can provide valuable information about the context in which the process was run. 
+Model performance results can be recorded here for comparison across runs. Additionally, you can log other metrics that provide valuable contextual information about the execution environment and process.
 
 ```python
 # Model performance metrics log
@@ -234,7 +214,7 @@ mlflow.log_metric(“system_execution_time”, result['execution_time'])
 
 ### 3. Artifacts
 
-Files and objects generated during the training process can be logged here. In the following code, for example, it is shown how to log a trained model as an artifact:
+Files and objects generated during the training process can be logged as artifacts. The following code demonstrates how to log a trained model as an artifact:
 
 ```python
 mlflow.sklearn.log_model(
@@ -246,68 +226,67 @@ input_example=input_example
 ```
 
 In this case, model artifacts include:
-- **Serialized model**: the trained model, saved as a serialized file, which allows it to be restored and used later for predictions.
-- **Model Dependencies**: files such as `conda.yaml` or `requirements.txt` that describe the execution environment, useful for replicating the software environment in which the model was trained.
-- **Signature and Input Example**: `signature` contains the input and output format of the model, while `input_example` is an input example that helps identify the data type expected by the model.
+- **Serialized Model**: The trained model saved as a serialized file, enabling restoration for future predictions
+- **Model Dependencies**: Files like `conda.yaml` or `requirements.txt` that describe the execution environment, facilitating replication of the model's training environment
+- **Signature and Input Example**: The `signature` defines the model's input and output formats, while the `input_example` demonstrates expected data types
 
-    The artifacts are saved in a relative directory specified by the `artifact_path` parameter, which is registered under the current run. To retrieve the model later, the full path to the artifact is specified as `runs:/<run_id>/model`.
+Artifacts are stored in a relative directory specified by the `artifact_path` parameter and registered under the current run. The model can be retrieved later using its full artifact path: `runs:/<run_id>/model`.
 
-In addition to the artifacts, the **metadata** of the model is also saved in the MLflow database, which includes:
+The MLflow database also stores the model's **metadata**, including:
 
-- **Run ID**: a unique identifier for the current run that associates the model with the experiment to which it belongs.
-- **Artifact path**: a reference to the storage path of the model (such as `runs:/<run_id>/model`), which is needed to locate and retrieve the saved model.
-- **Parameters and metrics**: If the model is associated with a run with logged parameters and metrics, this data is included in the database, allowing configurations and training performance to be tracked.
-- **Time and logging information**: timestamps and other details that track log configuration, useful for model context and versioning.
+- **Run ID**: A unique identifier linking the model to its associated experiment
+- **Artifact Path**: The model's storage location reference (e.g., `runs:/<run_id>/model`), required for model retrieval
+- **Parameters and Metrics**: Configuration and performance data from the model's training run, if logged
+- **Time and Logging Information**: Timestamps and configuration details for model context and versioning
 
-This metadata, although not containing the model itself, provides all the information needed to identify and load the correct model from the artifact directory.
+While this metadata doesn't contain the model itself, it provides all necessary information to identify and load the correct model from the artifact directory.
 
 ---
 
 ## 4. Information Retrieval
 
-MLflow offers several APIs to access information about recorded experiments and runs. These APIs allow retrieval of parameters, metrics, tags, and context for each run, facilitating analysis and comparison between runs. Some of the main features for searching and retrieving experiments and runs are described below.
+MLflow provides several APIs for accessing information about recorded experiments and runs. These APIs enable the retrieval of parameters, metrics, tags, and context for each run, facilitating analysis and comparison between different runs. Below are some of the main features for searching and retrieving experiments and runs.
 
 ### 1. API for retrieving experiments and runs
 
 ```
 mlflow.search_experiments(view_type: int = 1, max_results: Optional[int] = None, filter_string: Optional[str] = None, order_by: Optional[List[str]] = None) → List[Experiment]
 ```
-This function returns a list of experiments that meet the specified search criteria. Each experiment represents a group of related runs and is identified by a unique ID.
+This function returns a list of experiments matching the specified search criteria. Each experiment represents a group of related runs and is identified by a unique ID.
 
 ```python
 experiments = mlflow.search_experiments()
 ```
 **Main parameters:**
 
-- **`view_type`**: Specifies which experiments to display, with options such as `ACTIVE_ONLY` (active experiments only), `DELETED_ONLY` (deleted experiments) and `ALL`.
-- **`max_results`**: Limits the number of results. If not set, returns all experiments found.
-- **`filter_string`**: Allows filtering by attributes such as `name`, `creation_time` or `tags.<tag_key>`. 
-For example, `filter_string=“name = 'experiment_name`”` returns only experiments with that name.
-- **`order_by`**: Defines the display order. Examples of sorting are `“name DESC”` by decreasing name and `“last_update_time ASC”` by increasing update date.
+- **`view_type`**: Specifies which experiments to display, with options such as `ACTIVE_ONLY` (shows only active experiments), `DELETED_ONLY` (shows only deleted experiments), and `ALL` (shows all experiments).
+- **`max_results`**: Limits the number of results returned. If not specified, returns all matching experiments.
+- **`filter_string`**: Enables filtering by attributes such as `name`, `creation_time`, or `tags.<tag_key>`. 
+For example, `filter_string="name = 'experiment_name'"` returns only experiments with the specified name.
+- **`order_by`**: Defines the sorting order of results. For example, `"name DESC"` sorts by name in descending order, while `"last_update_time ASC"` sorts by update time in ascending order.
 
-The output is a list of `Experiment` objects, containing information such as name, ID and creation timestamp.
+The function returns a list of `Experiment` objects, each containing information such as the experiment's name, ID, and creation timestamp.
 
 ---
 
 ```
 mlflow.search_runs(experiment_ids: Optional[List[str]] = None, filter_string: str = '', run_view_type: int = 1, max_results: int = 100000, order_by: Optional[List[str]] = None, output_format: str = 'pandas', search_all_experiments: bool = False, experiment_names: Optional[List[str]] = None) → Union[List[Run], pandas.DataFrame][source]**
 ```
-This function searches for all runs belonging to one or more experiments. Each run is a single execution of the training process.
+This function searches for runs belonging to one or more experiments. Each run represents a single execution of the training process.
 
 ```python
 runs = mlflow.search_runs(experiment_ids=[exp.experiment_id])
 ```
 
 **Main parameters:**
+- **`experiment_ids`**: A list of experiment IDs to search for runs in. Alternatively, you can specify `experiment_names`.
+- **`filter_string`**: Filters runs based on specific parameters. For example, `"metrics.rmse < 0.2"` selects runs where the `rmse` value is less than 0.2.
+- **`run_view_type`**: Specifies which type of runs to search for, with options like `ACTIVE_ONLY`, `DELETED_ONLY`, or `ALL`.
+- **`max_results`**: The maximum number of runs to return in the results.
+- **`order_by`**: Determines how to sort the results, such as `metrics.accuracy DESC` to sort by accuracy in descending order.
+- **`output_format`**: The format of the output - either `pandas` (returns a DataFrame) or `list` (returns a list of Run objects).
 
-- **`experiment_ids`**: A list of experiment IDs in which to search for runs. Alternatively, you can specify `experiment_names`.
-- **`filter_string`**: Filters the runs based on specific parameters. For example, `“metrics.rmse < 0.2”` selects runs with a value of `rmse` less than 0.2.
-- **`run_view_type`**: Indicates the type of run to search for, with options such as `ACTIVE_ONLY`, `DELETED_ONLY`, or `ALL`.
-- **`max_results`**: Maximum number of runs to include in the result.
-- **`order_by`**: Specifies the order of the results, such as `metrics.accuracy DESC` to sort by accuracy in descending order.
-- **`output_format`**: Output format, can be `pandas` (returns a DataFrame) or `list` (returns a list of Run objects).
-
-The output is a list of `Run` objects, each containing run-related details such as parameters, metrics, and tags.
+The function returns a list of `Run` objects, with each object containing details about that run including its parameters, metrics, and tags.
 
 ---
 
@@ -333,23 +312,23 @@ This function allows a specific run to be retrieved via its `run_id`, reporting 
 
 **Output:** Returns a `Run` object, which includes:
 
-- **RunInfo**: Metadata about the run, such as the run ID, associated experiment and lifecycle state.
-- **RunData**: Parameters, tags and metrics about the run. In case of multiple metrics with the same key, the last value logged at the highest step for each metric is kept.
-- **RunInputs** (experimental): Includes information about the datasets used for the run.
+- **RunInfo**: Metadata about the run, such as the run ID, associated experiment, and lifecycle state.
+- **RunData**: Parameters, tags, and metrics about the run. When multiple metrics share the same key, only the last value logged at the highest step is retained.
+- **RunInputs** (experimental): Information about the datasets used for the run.
 
-If the run with the specified `run_id` does not exist, an exception is raised.
+If no run exists with the specified `run_id`, the function raises an exception.
 
 ---
 
-Functions using **search** (such as `mlflow.search_experiments()` and `mlflow.search_runs()`) return collections of experiments or runs based on specific search criteria. They offer the ability to filter and sort results based on various parameters.
+The **search** functions (such as `mlflow.search_experiments()` and `mlflow.search_runs()`) return collections of experiments or runs based on specific criteria. These functions enable filtering and sorting of results using various parameters.
 
-The **get** functions (such as `mlflow.get_experiment()` and `mlflow.get_run()`) are used to retrieve specific information about a single experiment or run using their unique identifier. These functions provide complete details about that specific object, but do not allow filtering or searching across multiple objects.
+The **get** functions (such as `mlflow.get_experiment()` and `mlflow.get_run()`) retrieve specific information about a single experiment or run using its unique identifier. While these functions provide complete details about a specific object, they don't support filtering or searching across multiple objects.
 
-### 2. API for retrieving information from Experiments and Runs.
+### 2. API for Retrieving Information from Experiments and Runs
 
-Once we have obtained the **Experiments** and **Runs** through the previously described methods, we can leverage this data to extract multiple useful pieces of information. The following are examples of how to use the MLflow API to retrieve detailed information:
+After obtaining **Experiments** and **Runs** through the previously described methods, we can extract various useful information. Here are examples of using the MLflow API to retrieve detailed information:
 
-1. **Fetching experiments and counting associated runs**: In this example, we use `mlflow.search_experiments()` to get a list of experiments and then, for each experiment, we use `mlflow.search_runs()` to count how many runs are associated with each experiment. Finally, we store this information in a list.
+1. **Fetching Experiments and Counting Associated Runs**: This example demonstrates using `mlflow.search_experiments()` to retrieve a list of experiments, then using `mlflow.search_runs()` to count the runs associated with each experiment. The information is then stored in a list.
 
 
  ```python
@@ -395,8 +374,8 @@ experiment_info = {
     “artifact_location": experiment.artifact_location,
     “lifecycle_stage": experiment.lifecycle_stage,
     “tags": experiment.tags,
-    “data_creation": datetime.fromtimestamp(experiment.creation_time / 1000).strftime(‘%Y-%m-%d %H:%M:%S’) if experiment.creation_time else None,
-    “last_updated": datetime.fromtimestamp(experiment.last_update_time / 1000).strftime(‘%Y-%m-%d %H:%M:%S’) if experiment.last_update_time else None,
+    “data_creation”: datetime.fromtimestamp(experiment.creation_time / 1000).strftime(‘%Y-%m-%d %H:%M:%S’) if experiment.creation_time else None,
+    “last_updated”: datetime.fromtimestamp(experiment.last_update_time / 1000).strftime(‘%Y-%m-%d %H:%M:%S’) if experiment.last_update_time else None,
 }
 ```
 
@@ -412,7 +391,7 @@ model = run.data.tags.get('model_type', 'Unknown Model Type')
 lifecycle_stage = run.info.lifecycle_stage
 ```
 
-Having obtained this information, there are multiple uses that can be devised for filtering the data according to one's needs, creating custom functions or taking advantage of what MLflow offers.
+After obtaining this information, there are multiple ways to utilize it - from filtering data based on specific needs to creating custom functions or leveraging MLflow's built-in capabilities.
 
 ---
 

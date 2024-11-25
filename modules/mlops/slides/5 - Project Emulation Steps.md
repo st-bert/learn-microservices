@@ -1,40 +1,41 @@
 ## Emulating the Lifecycle
 
 The goal of this project is to emulate the entire lifecycle of an *ML model* in a *production environment*, from tracking
-**model optimizations** to selecting the best-performing model, comparing **stored results** and perform **monitoring**. By logging and making these records
+**model optimizations** to selecting the best-performing model, comparing **stored results** and performing **monitoring**. By logging and making these records
 easily accessible, it enables streamlined model selection and performance analysis. 
 Using [`Postman`](https://www.postman.com/), different requests can be sent to each *microservice* to manage and interact with each stage of this lifecycle.
 
-
+You can find the complete API documentation in the [API.md](extras/API.md) file.
 
 
 ### Data Loading
 
+The first step is to load the *training* and *testing* sets into the *MySQL DB dataset*.
+
 ```
-POST request on http://127.0.0.1:5000/root/simulator
+POST request on http://127.0.0.1:5004/root/simulator
 Request body: {
   "set_name": "training"
 }
 ```
 
 ```
-POST request on http://127.0.0.1:5000/root/simulator
+POST request on http://127.0.0.1:5004/root/simulator
 Request body: {
   "set_name": "testing"
 }
 ```
-### MLFlow Logging
+### MLflow Logging
 
- **Training set must be loaded** on the *MySQL DB dataset*, in order to train *ML model* and perform the
-hyperparameter tuning.
+The **training set must be loaded** into the *MySQL DB dataset* before training the *ML model* and performing hyperparameter tuning.
 
-#### Hyperparameter Tuning and Logging Expreiment
+#### Hyperparameter Tuning and Experiment Logging
 
-We then send a **POST** request to initiate the model optimization specifying:
-- the models
-- hyperparameters
-- grid search instructions (cross-validation and scoring metric)
-- and logging details for experiment tracking in MLflow.
+We then send a **POST** request to initiate model optimization by specifying:
+- The models to evaluate
+- Hyperparameters to tune for each model
+- Grid search instructions (cross-validation folds and scoring metric)
+- Logging details for experiment tracking in MLflow
 
 ```
 POST request on http://127.0.0.1:5002/root/tracking/model_management
@@ -80,10 +81,13 @@ Response:
     }
 }
 ```
+It is essential to save both the *experiment ID* and *run IDs* for sending subsequent requests. However, these IDs can always be retrieved later through simple GET requests if needed.
 
-It is essential to save both the *experiment ID* and the *runs IDs*. However, in any case, they can still be retrieved through simple GET requests.
+It is essential to save both the *experiment ID* and the *runs IDs* to send the next requests. However, in any case, they can still be retrieved through simple GET requests.
 
-### MLFlow Data Recovery
+### MLflow Data Recovery
+
+We can easily retrieve all saved experiments and runs, along with their specific information, through the MLflow API.
 
 #### Recover all saved experiments with limited information:
 
@@ -152,11 +156,11 @@ Response:
 
 #### Recover information about a specified *Experiment*:
 
-- The `request_information` can be:
+The `request_information` parameter can be:
 
-1. `general`: for obtaining general information about experiments.
-2. `best_model`: to get the runs related to the model that achieved the best performance during cross-validation. In this case, specifying the `filter` for the metric to consider is required.
-3. `statistics`: to obtain various statistics about metrics such as mean, median, standard deviation, variance, min, max, mode, and IQR. You can use `filter` to specify which metrics to consider; to get a complete report of statistics, set `filter` to 'all' or omit it.
+1. `general`: obtains general information about experiments
+2. `best_model`: retrieves runs related to the model that achieved the best performance during cross-validation. This requires specifying the `filter` parameter for the metric to consider
+3. `statistics`: obtains various statistics about metrics (mean, median, standard deviation, variance, min, max, mode, and IQR). Use the `filter` parameter to specify which metrics to consider. For a complete statistical report, set `filter` to 'all' or omit it
 
 ```
 POST request on http://127.0.0.1:5002/root/tracking/experiments
@@ -287,12 +291,14 @@ response:
 ```
 #### Recover Information about a Specified *Run*
 
-To retrieve information about a specific *Run*, you need to provide the `run_id` in addition to the `experiment_id`. The `request_information` can be specified as follows:
+To retrieve information about a specific *Run*, you need to provide both the `run_id` and `experiment_id`.
 
-1. **`parameters`**: This retrieves the parameters defined by the `type` field, which can be:
-   - **`data`**: Use this to obtain parameters such as the number of data samples, features, and the different classes of data utilized during hyperparameter tuning.
-   - **`grid_search`**: Select this to get the scoring, cross-validation details, and all model parameters used in the grid search.
-   - **`model`**: Use this option to retrieve the parameters that were optimized during the model training process.
+The `request_information` parameter can be set to either `parameters` or `metrics`:
+
+1. **`parameters`**: Retrieves the parameters defined by the `type` field, which can be:
+   - **`data`**: Retrieves parameters such as the number of data samples, features, and different classes of data used during hyperparameter tuning
+   - **`grid_search`**: Retrieves scoring, cross-validation details, and all model parameters used in the grid search
+   - **`model`**: Retrieves the parameters that were optimized during the model training process
 
 ```
 POST request on http://127.0.0.1:5002/root/tracking/runs
@@ -358,9 +364,9 @@ response:
 ```
 ---
 
-2. **`metrics`**: This retrieves metrics defined by the `type` field, which can include:
-   - **`system`**: This option retrieves CPU usage data during the processing.
-   - **`model`**: This retrieves all metrics computed during cross-validation.
+2. **`metrics`**: Retrieves metrics defined by the `type` field, which can include:
+   - **`system`**: Retrieves CPU usage data during processing.
+   - **`model`**: Retrieves all metrics computed during cross-validation.
 
 ```
 POST request on http://127.0.0.1:5002/root/tracking/runs
@@ -404,11 +410,10 @@ response:
     }
 }
 ```
-### Setting and Use of ML Model
+#### Model Deployment and Usage
 
-
-#### Set Model for **ML** micro-service
-Through the **Tracking** microservice, a model can be set up in the **ML** microservice
+1. **Deploy Model to ML Service**
+First, we need to deploy the selected model from MLflow to the ML microservice:
 ```
 POST request on http://127.0.0.1:5002/root/tracking/model_management
 {
@@ -417,10 +422,22 @@ POST request on http://127.0.0.1:5002/root/tracking/model_management
 }
 ```
 
-#### Using Model in ML service
+Alternatively, we can deploy a new model by specifying its name and hyperparameters:
+```
+POST request on http://127.0.0.1:5001/root/ml/set_model
+{
+    "model_name": "RandomForest",
+    "hyperparameters": {
+        "n_estimators": 100,
+        "max_depth": 10,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1
+    }
+}
+```
 
-Now, the *ML model* can be trained and tested.
-
+2. **Model Training**
+After deployment, we train the model using the training dataset:
 ```
 POST request on http://127.0.0.1:5001/root/ml
 Request body: {
@@ -428,10 +445,8 @@ Request body: {
 }
 ```
 
-#### Testing
-
-Now, the *ML model* can be tested on the *testing* set.
-
+3. **Model Evaluation**
+Once trained, we can evaluate the model's performance on the test dataset:
 ```
 POST request on http://127.0.0.1:5001/root/ml
 Request body: {
@@ -441,16 +456,19 @@ Request body: {
 
 ### ML Model in a Production Environment
 
-Having a well performing *ML model*, it is feasible to put it in a *production environment*.
-It is now possible also load the *production* set, that is the final *batch* of dirty data. This data simulate the new and unseen data that come to the *ML model* once it is put in a *production environment*.
+After validating the model's performance on test data, we can deploy it to handle production data. 
+
+1. **Load Production Dataset**: 
+First, we load a simulated production dataset that contains potentially noisy or "dirty" data to mimic real-world conditions:
 ```
-POST request on http://127.0.0.1:5000/root/simulator
+POST request on http://127.0.0.1:5004/root/simulator
 Request body: {
   "set_name": "production"
 }
 ```
 
-The *ML model* can be tested on the *production* set. Very often *production* data, over time, tend to differ from the data on which the *ML model* was trained, thus causing a decline in performance.
+2. **Evaluate on Production Data**:
+Then we can evaluate the model's performance on this production data. Production data often differs from training data due to data drift, which may cause performance degradation over time:
 ```
 POST request on http://127.0.0.1:5001/root/ml
 Request body: {
@@ -460,9 +478,9 @@ Request body: {
 
 ### ML Model Monitoring
 
-Finally, through *Evidently AI* it is possible to compute *reports* and *tests*, to detect the data *drift* and many others problems that could be present on *production* data. Specifically, *summary* can be used to check if a *re-training* is necessary. It is therefore allowed to choose the specific *tests* to perform.
+Finally, through *Evidently AI*, it is possible to compute *reports* and *tests* to detect data *drift* and many other problems that may be present in *production* data. Specifically, the *summary* can be used to check if *re-training* is necessary. You can choose which specific *tests* to perform.
 ```
-POST request on http://127.0.0.1:5002/ml_model_monitoring/monitoring
+POST request on http://127.0.0.1:5003/root/monitoring
 Request body: {
   "metric": "report"
 }
@@ -487,10 +505,9 @@ Request body: {
 }
 ```
 
-### Deleting MLFlow Experiments and Runs
+### Deleting MLflow Experiments and Runs
 
-Additionally, if desired, **Experiments** or **Runs** can also be deleted from the MLflow database using the following
-**DELETE** command.
+Additionally, **Experiments** or **Runs** can be deleted from the MLflow database using the following **DELETE** command.
 
 ```
 DELETE request on http://127.0.0.1:5002/root/tracking/experiments?experiment_id=1
