@@ -3,6 +3,7 @@ package com.nbicocchi.inventory.workers;
 import com.nbicocchi.inventory.persistence.model.Inventory;
 import com.nbicocchi.inventory.persistence.repository.InventoryRepository;
 import com.nbicocchi.inventory.pojos.Order;
+import com.nbicocchi.inventory.pojos.TaskResult;
 import com.netflix.conductor.sdk.workflow.task.WorkerTask;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,7 @@ public class InventoryWorkers {
      * Note: Using this setting, up to 5 tasks will run in parallel, with tasks being polled every 200ms
      */
     @WorkerTask(value = "inventory-check", threadCount = 1, pollingInterval = 200)
-    public void inventoryCheck(Order order) {;
+    public TaskResult inventoryCheck(Order order) {
         List<String> productIds = Arrays.stream(order.getProductIds().split(",")).toList();
         log.info("Verifying inventory {}...", productIds);
         for (String id : productIds) {
@@ -34,12 +35,16 @@ public class InventoryWorkers {
                     inventoryRepository.save(inventory);
                 } else {
                     // inventory empty
-                    throw new RuntimeException("Inventory empty: " + id);
+                    log.info("Verifying inventory (not valid)");
+                    return new TaskResult(TaskResult.Result.FAIL, "Inventory empty");
                 }
             } else {
                 // missing product
-                throw new RuntimeException("Inventory not found: " + id);
+                log.info("Verifying inventory (not valid)");
+                return new TaskResult(TaskResult.Result.FAIL, "Missing product");
             }
         }
+        log.info("Verifying inventory (valid)");
+        return new TaskResult(TaskResult.Result.PASS, "");
     }
 }
