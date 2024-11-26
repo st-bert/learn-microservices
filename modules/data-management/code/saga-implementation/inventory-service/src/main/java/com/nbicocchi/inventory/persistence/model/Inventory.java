@@ -13,13 +13,11 @@ public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "product_id", referencedColumnName = "id")
-    private Product product;
+    private String productId;
     private Integer quantity;
 
-    public Inventory(Product product, Integer quantity) {
-        this.product = product;
+    public Inventory(String productId, Integer quantity) {
+        this.productId = productId;
         this.quantity = quantity;
     }
 }

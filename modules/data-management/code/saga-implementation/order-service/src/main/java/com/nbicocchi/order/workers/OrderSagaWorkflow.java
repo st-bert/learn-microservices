@@ -1,4 +1,4 @@
-package com.nbicocchi.order.service;
+package com.nbicocchi.order.workers;
 
 import com.nbicocchi.order.persistence.model.Order;
 import com.netflix.conductor.client.http.WorkflowClient;
@@ -14,7 +14,7 @@ import java.util.Map;
 @Slf4j
 @AllArgsConstructor
 @Service
-public class WorkflowService {
+public class OrderSagaWorkflow {
     private final WorkflowClient workflowClient;
     public Map<String, Object> startOrderFlow(Order order) {
         StartWorkflowRequest request = new StartWorkflowRequest();

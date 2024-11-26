@@ -1,37 +1,29 @@
 package com.nbicocchi.payment.worker;
 
-import com.nbicocchi.payment.pojos.DepositDetail;
-import com.nbicocchi.payment.pojos.FraudCheckResult;
-import com.nbicocchi.payment.service.FraudCheckService;
-import com.netflix.conductor.sdk.workflow.task.InputParam;
+import com.nbicocchi.payment.pojos.Order;
+import com.nbicocchi.payment.persistence.model.Payment;
+import com.nbicocchi.payment.persistence.repository.PaymentRepository;
 import com.netflix.conductor.sdk.workflow.task.WorkerTask;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.IntStream;
-
 @AllArgsConstructor
 @Component
 @Slf4j
 public class PaymentWorkers {
-
-    private final FraudCheckService fraudCheckService;
-    private final Random random = new Random();
-
-    // docs-marker-start-1
+    PaymentRepository paymentRepository;
 
     /**
      * Note: Using this setting, up to 5 tasks will run in parallel, with tasks being polled every 200ms
      */
-    @WorkerTask(value = "payment-check-nb", threadCount = 1, pollingInterval = 200)
-    public FraudCheckResult checkForFraudTask(DepositDetail depositDetail) {
-        log.info("ok");
-        return fraudCheckService.checkForFraud(depositDetail);
+    @WorkerTask(value = "payment-check", threadCount = 1, pollingInterval = 200)
+    public void paymentCheck(Order order) {
+        log.info("Verifying {}...", order);
+        Payment payment = new Payment(order.getCode(), order.getCreditCardNumber());
+        if (payment.getCreditCardNumber().startsWith("777")) {
+            payment.setSuccess(Boolean.TRUE);
+        }
+        paymentRepository.save(payment);
     }
-
-    // docs-marker-end-1
 }

@@ -24,13 +24,12 @@ public class Order {
     private String productIds;
     private String customerId;
     private String creditCardNumber;
-    private OrderStatus status;
+    private OrderStatus status = OrderStatus.PENDING;
 
     public Order(String code, String productIds, String customerId, String creditCardNumber) {
         this.code = code;
         this.productIds = productIds;
         this.customerId = customerId;
         this.creditCardNumber = creditCardNumber;
-        this.status = OrderStatus.PENDING;
     }
 }

@@ -1,7 +1,7 @@
 package com.nbicocchi.order.controller;
 
 import com.nbicocchi.order.persistence.model.Order;
-import com.nbicocchi.order.service.WorkflowService;
+import com.nbicocchi.order.workers.OrderSagaWorkflow;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,7 @@ import java.util.Map;
 @AllArgsConstructor
 @RestController
 public class OrderController {
-    private final WorkflowService workflowService;
+    private final OrderSagaWorkflow workflowService;
 
     @PostMapping(value = "/order", produces = "application/json")
     public ResponseEntity<Map<String, Object>> triggerOrderFlow(@RequestBody Order order) {

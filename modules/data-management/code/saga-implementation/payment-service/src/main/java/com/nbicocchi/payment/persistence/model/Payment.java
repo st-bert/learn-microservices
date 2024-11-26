@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @ToString
 @NoArgsConstructor
 @Entity
-public class PaymentDetails {
+public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,12 +19,12 @@ public class PaymentDetails {
     @Column(unique = true, nullable = false, updatable = false)
     @EqualsAndHashCode.Include
     private String orderId;
-    private LocalDateTime createdAt;
-    private Boolean success;
+    private String creditCardNumber;
+    private LocalDateTime createdAt = LocalDateTime.now();
+    private Boolean success = Boolean.FALSE;
 
-    public PaymentDetails(String orderId, Boolean success) {
+    public Payment(String orderId, String creditCardNumber) {
         this.orderId = orderId;
-        this.createdAt = LocalDateTime.now();
-        this.success = success;
+        this.creditCardNumber = creditCardNumber;
     }
 }
