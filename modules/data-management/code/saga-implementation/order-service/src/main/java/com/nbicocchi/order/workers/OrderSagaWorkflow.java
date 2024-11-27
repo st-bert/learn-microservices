@@ -20,7 +20,7 @@ public class OrderSagaWorkflow {
         StartWorkflowRequest request = new StartWorkflowRequest();
         request.setName("order-saga");
         Map<String, Object> inputData = new HashMap<>();
-        inputData.put("code", order.getCode());
+        inputData.put("orderId", order.getOrderId());
         inputData.put("productIds", order.getProductIds());
         inputData.put("customerId", order.getCustomerId());
         inputData.put("creditCardNumber", order.getCreditCardNumber());

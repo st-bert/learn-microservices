@@ -3,6 +3,8 @@ package com.nbicocchi.order.persistence.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Setter
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -20,14 +22,13 @@ public class Order {
     private Long id;
     @Column(unique = true, nullable = false, updatable = false)
     @EqualsAndHashCode.Include
-    private String code;
+    private String orderId = UUID.randomUUID().toString();
     private String productIds;
     private String customerId;
     private String creditCardNumber;
     private OrderStatus status = OrderStatus.PENDING;
 
-    public Order(String code, String productIds, String customerId, String creditCardNumber) {
-        this.code = code;
+    public Order(String productIds, String customerId, String creditCardNumber) {
         this.productIds = productIds;
         this.customerId = customerId;
         this.creditCardNumber = creditCardNumber;

@@ -10,10 +10,10 @@ public class Order {
     }
 
     @EqualsAndHashCode.Include
-    private String code;
+    private String orderId;
     private String productIds;
     private String customerId;
     private String creditCardNumber;
-    private OrderStatus status = OrderStatus.PENDING;
+    private OrderStatus status;
 }
 

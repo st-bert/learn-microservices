@@ -21,8 +21,8 @@ public class PaymentWorkers {
     @WorkerTask(value = "payment-check", threadCount = 1, pollingInterval = 200)
     public TaskResult paymentCheck(Order order) {
         log.info("Verifying {}...", order);
-        Payment payment = new Payment(order.getCode(), order.getCreditCardNumber());
-        if (payment.getCreditCardNumber().startsWith("777")) {
+        Payment payment = new Payment(order.getOrderId(), order.getCreditCardNumber());
+        if (payment.getCreditCardNumber().startsWith("7777")) {
             log.info("Verifying Order(valid)");
             payment.setSuccess(Boolean.TRUE);
             paymentRepository.save(payment);

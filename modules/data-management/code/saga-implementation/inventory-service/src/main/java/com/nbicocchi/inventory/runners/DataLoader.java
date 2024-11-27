@@ -13,7 +13,7 @@ public class DataLoader implements ApplicationRunner {
     InventoryRepository inventoryRepository;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         inventoryRepository.save(new Inventory("P-001", 9));
         inventoryRepository.save(new Inventory("P-002", 0));
         inventoryRepository.save(new Inventory("P-003", 1));

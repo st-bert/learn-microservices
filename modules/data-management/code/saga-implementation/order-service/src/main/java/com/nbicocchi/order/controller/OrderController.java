@@ -26,6 +26,6 @@ public class OrderController {
 
     @GetMapping(value = "/order", produces = "application/json")
     public Order returnOrderInBrowser() {
-        return new Order("O-001", "P-001,P-002", "C-001", "1234-5678");
+        return new Order("P-001,P-002", "C-001", "7777-1234-5678-0000");
     }
 }
