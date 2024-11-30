@@ -1,4 +1,4 @@
-# 2. MLflow for Tracking Machine Learning Experiments
+# MLflow
 
 MLflow's primary feature is **experiment tracking**. This functionality enables users to log and track parameters, metrics, and artifacts for each experiment. Users can effectively monitor model performance and compare different configurations, maintaining transparency in the development process and facilitating team collaboration through shared results.
 
@@ -147,28 +147,21 @@ Each run is associated with a specific experiment and records all details relate
 To create a run, you use the `mlflow.start_run()` function; An example of how to start a run is shown below:
 
 ```python
-with mlflow.start_run(experiment_id=experiment_id, run_name="Nome della Run) as run:
+with mlflow.start_run(experiment_id=experiment_id, run_name="name_of_the_run") as run:
 ```
 
-The parameters that can be specified in the function are:
+The parameters that can be specified in the `start_run()` function are:
 
-- **experiment_ids** or **experiment_names**: List of experiment IDs from which to search for runs. You can specify either IDs or names, but not both.
-  
-- **filter_string**: A string to filter the run results. For example, you can search for runs with specific metrics.
+- **run_id**: If specified, resumes the run with the given UUID. All other parameters are ignored when resuming a run.
+- **experiment_id**: ID of the experiment under which to create the run (only used when run_id is not specified).
+- **run_name**: Name of the run. Only used when run_id is not specified. If not provided for a new run, a random name will be generated.
+- **nested**: Boolean that controls whether the run is nested in a parent run.
+- **parent_run_id**: If specified, the current run will be nested under the run with this UUID. The parent run must be active.
+- **tags**: Optional dictionary of string keys and values to set as tags on the run.
+- **description**: Optional string that populates the description box of the run.
+- **log_system_metrics**: Optional boolean to enable logging of system metrics (e.g., CPU/GPU utilization). If not specified, checks MLFLOW_ENABLE_SYSTEM_METRICS_LOGGING environment variable.
 
-- **run_view_type**: Specifies which type of runs to view (active, deleted, or all).
-
-- **max_results**: Maximum number of runs to return (default: 100,000).
-
-- **order_by**: List of columns by which to order the results (e.g., "metrics.rmse").
-
-- **search_all_experiments**: Boolean indicating whether to search across all experiments.
-
-- **output_format**: Specifies the output format (can be `pandas` or `list`).
-
-The function returns either a list of `mlflow.entities.Run` objects or, if specified, a `pandas.DataFrame` containing run information.
-
-During a run, you can also record contextual information using custom tags. For example, you can set tags to describe the type of experiment or model being used, as shown in the following example:
+During a run, you can also record contextual information using custom tags. For example:
 
 ```python
 mlflow.set_tag("experiment_type", "GridSearch_CrossValidation")

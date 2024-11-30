@@ -2,10 +2,13 @@
 
 The goal of this project is to emulate the entire lifecycle of an *ML model* in a *production environment*, from tracking
 **model optimizations** to selecting the best-performing model, comparing **stored results** and performing **monitoring**. By logging and making these records
-easily accessible, it enables streamlined model selection and performance analysis. 
-Using [`Postman`](https://www.postman.com/), different requests can be sent to each *microservice* to manage and interact with each stage of this lifecycle.
+easily accessible, it enables streamlined model selection and performance analysis.
 
-You can find the complete API documentation in the [API.md](extras/API.md) file.
+This file serves as a step-by-step guide to replicate the project workflow using the provided [`MLOps Microservices Postman collection`](../code/tracking/postman/MLOps_Microservices.postman_collection.json).
+
+Using [`Postman`](https://www.postman.com/), you can execute these requests in sequence to interact with each *microservice* and experience the complete ML lifecycle. Each section below details the specific requests and their purpose.
+
+For detailed information about all available API endpoints, request/response formats, and usage examples, please refer to the complete API documentation in the [API.md](extras/API.md) file.
 
 
 ### Data Loading
