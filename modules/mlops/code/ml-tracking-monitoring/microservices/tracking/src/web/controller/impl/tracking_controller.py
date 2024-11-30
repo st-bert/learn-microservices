@@ -14,7 +14,7 @@ from src.web.controller.i_controller import IController
 class TrackingController(IController):
     def __init__(self,
                  tracking_service: IService,
-                 app_host="127.0.0.1", app_port=5003, app_debug=False, base_url="/root", service_url="/ml-tracking-monitoring",
+                 app_host="127.0.0.1", app_port=5003, app_debug=False, base_url="/root", service_url="/tracking",
                  db_dataset_host="127.0.0.1", db_dataset_port=3306, db_dataset_name="", db_dataset_user="root",
                  db_dataset_password=None,
                  db_mlflow_host="127.0.0.1", db_mlflow_port=3306, db_mlflow_name="", db_mlflow_user="root",
