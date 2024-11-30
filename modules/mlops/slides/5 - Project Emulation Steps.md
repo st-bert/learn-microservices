@@ -4,7 +4,7 @@ The goal of this project is to emulate the entire lifecycle of an *ML model* in 
 **model optimizations** to selecting the best-performing model, comparing **stored results** and performing **monitoring**. By logging and making these records
 easily accessible, it enables streamlined model selection and performance analysis.
 
-This file serves as a step-by-step guide to replicate the project workflow using the provided [`MLOps Microservices Postman collection`](../code/tracking/postman/MLOps_Microservices.postman_collection.json).
+This file serves as a step-by-step guide to replicate the project workflow using the provided [`MLOps Microservices Postman collection`](../code/ml-tracking-monitoring/postman/MLOps_Microservices.postman_collection.json).
 
 Using [`Postman`](https://www.postman.com/), you can execute these requests in sequence to interact with each *microservice* and experience the complete ML lifecycle. Each section below details the specific requests and their purpose.
 

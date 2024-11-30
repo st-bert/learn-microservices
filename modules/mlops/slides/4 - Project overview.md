@@ -2329,7 +2329,7 @@ The *Monitoring Controller* allows you to:
 
 ## Run Microservices
 
-To run all the [`Docker`](https://www.docker.com/) *containers*, it is sufficient to run the command `./launch.sh` following the [README.md](../code/tracking/README.md). This will build every container based on the `docker-compose.yml` file.
+To run all the [`Docker`](https://www.docker.com/) *containers*, it is sufficient to run the command `./launch.sh` following the [README.md](../code/ml-tracking-monitoring/README.md). This will build every container based on the `docker-compose.yml` file.
 All *containers* can run simultaneously in the background. The *simulator*, *ML model* and *tracking* *microservices* are mapped to different *ports* and rely on the *health check* performed on the *MySQL DB* *container*.
 
 
