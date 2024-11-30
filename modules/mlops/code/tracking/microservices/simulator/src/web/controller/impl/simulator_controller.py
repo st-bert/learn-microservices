@@ -55,9 +55,6 @@ class SimulatorController(IController):
         self.add_resource()
         self.set_db()
 
-        '''self.simulator_service.insert_records("training")
-        self.simulator_service.insert_records("testing")
-        self.simulator_service.insert_records("production")'''
 
     def add_resource(self):
         self.api.add_resource(

@@ -37,7 +37,6 @@ class MLService(IService):
 
     def init_query(self):
         self.query = Query(self.db)
-        # self.query.samples_columns_name = self.ml_model.columns_name
 
     def select_records(self, step):
         score = 0
@@ -105,7 +104,6 @@ class MLService(IService):
             "dataset_id", "sample_id", "target_id",
             "sample_index", "target_index", "targets.sample_index"
         ])
-        #records.replace({"null", np.nan})
         records.fillna(records.mean(), inplace=True)
         X = records.drop(columns=["class"])
         y = records["class"]

@@ -54,11 +54,6 @@ class MonitoringController(IController):
 
         self.add_resource()
 
-        '''from time import sleep
-        sleep(5)
-        self.monitoring_service.compute_metric("report")
-        self.monitoring_service.compute_metric("tests")
-        self.monitoring_service.compute_metric("summary")'''
 
     def add_resource(self):
         self.api.add_resource(

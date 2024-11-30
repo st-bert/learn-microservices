@@ -54,11 +54,6 @@ class MLController(IController):
 
         self.add_resource()
 
-        '''from time import sleep
-        sleep(2)
-        score = self.ml_service.select_records("training")
-        score = self.ml_service.select_records("testing")
-        score = self.ml_service.select_records("production")'''
 
     def add_resource(self):
         self.api.add_resource(
