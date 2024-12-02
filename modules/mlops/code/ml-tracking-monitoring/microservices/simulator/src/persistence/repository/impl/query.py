@@ -17,6 +17,10 @@ class Query(IQuery):
         self.logger = logging.getLogger(__name__)
 
     def create_datasets_table(self):
+        """
+        Create the datasets table.
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
                 create table if not exists {}(
@@ -34,6 +38,10 @@ class Query(IQuery):
         self.cursor.close()
 
     def create_samples_table(self):
+        """
+        Create the samples table.
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
                 create table if not exists {}(
@@ -58,6 +66,10 @@ class Query(IQuery):
         self.cursor.close()
 
     def create_predictions_table(self):
+        """
+        Create the predictions table.
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
                 create table if not exists {}(
@@ -81,6 +93,10 @@ class Query(IQuery):
         self.cursor.close()
 
     def create_targets_table(self):
+        """
+        Create the targets table.
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
                 create table if not exists {}(
@@ -104,6 +120,11 @@ class Query(IQuery):
         self.cursor.close()
 
     def insert_dataset_records(self, records):
+        """
+        Insert the dataset records.
+        :param records: The records to insert
+        """
+
         self.cursor = self.db.connection.cursor()
         for r in records.iterrows():
             self.cursor.execute('''
@@ -118,6 +139,11 @@ class Query(IQuery):
         self.cursor.close()
 
     def insert_samples_records(self, records):
+        """
+        Insert the samples records.
+        :param records: The records to insert
+        """
+
         self.cursor = self.db.connection.cursor()
         for r in records.iterrows():
             self.cursor.execute('''
@@ -132,11 +158,21 @@ class Query(IQuery):
         self.cursor.close()
 
     def insert_predictions_records(self, records):
+        """
+        Insert the predictions records.
+        :param records: The records to insert
+        """
+
         self.cursor = self.db.connection.cursor()
         self.db.connection.commit()
         self.cursor.close()
 
     def insert_targets_records(self, records):
+        """
+        Insert the targets records.
+        :param records: The records to insert
+        """
+
         self.cursor = self.db.connection.cursor()
         for r in records.iterrows():
             self.cursor.execute('''
@@ -151,6 +187,11 @@ class Query(IQuery):
         self.cursor.close()
 
     def select_value(self, table):
+        """
+        Select the value.
+        :param table: The table to select from
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
         select * from {};
@@ -160,10 +201,14 @@ class Query(IQuery):
         records = self.cursor.fetchall()
         self.cursor.close()
         print(len(records))
-        '''for i, r in enumerate(records):
-            print(i, type(r), r)'''
 
     def select_condition_value(self, table, condition):
+        """
+        Select the value with a condition.
+        :param table: The table to select from
+        :param condition: The condition to select with
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
         select * from {}
@@ -176,6 +221,14 @@ class Query(IQuery):
         print(len(records))
 
     def select_joined_value(self, table_1, table_2, on_1, on_2):
+        """
+        Select the joined value.
+        :param table_1: The first table to select from
+        :param table_2: The second table to select from
+        :param on_1: The first table's column to join on
+        :param on_2: The second table's column to join on
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
         SELECT * FROM {} join {}
@@ -192,6 +245,11 @@ class Query(IQuery):
             print(i, type(r), r)
 
     def delete_values(self, table):
+        """
+        Delete the values.
+        :param table: The table to delete from
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
         delete from {};
@@ -202,6 +260,11 @@ class Query(IQuery):
         self.cursor.close()
 
     def describe_table(self, table):
+        """
+        Describe the table.
+        :param table: The table to describe
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
         describe {};

@@ -20,6 +20,29 @@ class TrackingController(IController):
                  db_mlflow_host="127.0.0.1", db_mlflow_port=3306, db_mlflow_name="", db_mlflow_user="root",
                  db_mlflow_password=None,
                  ml_host="127.0.0.1", ml_port=5001, ml_service_url="/ml"):
+        """
+        Initialize TrackingController instance.
+        
+        :param tracking_service: Service implementing IService interface
+        :param app_host: Flask application host address, defaults to "127.0.0.1"
+        :param app_port: Flask application port number, defaults to 5003
+        :param app_debug: Enable Flask debug mode, defaults to False
+        :param base_url: Base URL for API endpoints, defaults to "/root"
+        :param service_url: Service-specific URL path, defaults to "/tracking"
+        :param db_dataset_host: Dataset database host address
+        :param db_dataset_port: Dataset database port
+        :param db_dataset_name: Dataset database name
+        :param db_dataset_user: Dataset database username
+        :param db_dataset_password: Dataset database password
+        :param db_mlflow_host: MLflow database host address
+        :param db_mlflow_port: MLflow database port
+        :param db_mlflow_name: MLflow database name
+        :param db_mlflow_user: MLflow database username
+        :param db_mlflow_password: MLflow database password
+        :param ml_host: ML service host address
+        :param ml_port: ML service port number
+        :param ml_service_url: ML service URL path
+        """
 
         self.tracking_service = tracking_service
         self.app_host = app_host
@@ -60,6 +83,14 @@ class TrackingController(IController):
         self.initialize()
 
     def initialize(self):
+        """
+        Initialize Flask application and configure database connections.
+        
+        Sets up Flask app configuration, creates API instance, initializes parsers,
+        establishes database connections, and configures MLflow tracking URI.
+        :raises MySQLConnectionError: If unable to connect to databases
+        :raises MLflowException: If unable to set up MLflow tracking
+        """
         self.app = Flask(__name__)
 
         self.app.config["MYSQL_HOST"] = self.db_dataset_host
@@ -88,6 +119,18 @@ class TrackingController(IController):
         self.add_resource()
 
     def add_resource(self):
+        """
+        Add API resources and endpoints for the tracking service.
+        
+        Registers the following resources:
+        - TrackingExperiment: Handles experiment CRUD operations at /experiments endpoint
+        - TrackingRuns: Manages experiment runs at /runs endpoint 
+        - Optimization: Handles model optimization at /model_management endpoint
+        
+        Each resource is initialized with required dependencies like the request parser,
+        tracking service, and database connections.
+        """
+
         self.api.add_resource(
             TrackingExperiment,
             "".join([self.base_url, self.service_url, "/experiments"]),
@@ -118,6 +161,10 @@ class TrackingController(IController):
         )
 
     def run(self):
+        """
+        Run the Flask app.
+        """
+
         self.app.run(host=self.app_host, port=self.app_port, debug=self.app_debug)
 
 
@@ -147,6 +194,10 @@ class Optimization(Resource):
         self.parser.add_argument("request_information", type=str, location='json', help="Type of Request")
 
     def post(self):
+        """
+        Post the request.
+        """
+
         try:
             args = self.parser.parse_args()
             models = args["models"]
@@ -236,6 +287,9 @@ class TrackingExperiment(Resource):
         self.parser.add_argument("filter", type=list, location='json', help="Filter for Request Information")
 
     def get(self):
+        """
+        Get experiments.
+        """
 
         try:
             experiments = self.tracking_service.mlflow.search_experiments()
@@ -273,6 +327,10 @@ class TrackingExperiment(Resource):
             }, 500
 
     def post(self):
+        """
+        Post the request to get experiment info, best model and statistics.
+        """
+
         args = self.parser.parse_args()
         experiment_id = args.get("experiment_id")
         request_info = args.get("request_information")
@@ -361,6 +419,10 @@ class TrackingExperiment(Resource):
             }, 500
 
     def delete(self):
+        """
+        Delete experiment.
+        """
+
         try:
             experiment_id = request.args.get("experiment_id")
             experiment = self.tracking_service.mlflow.get_experiment(experiment_id)
@@ -392,6 +454,10 @@ class TrackingRuns(Resource):
                                       "'system', 'model' for Metrics")
 
     def get(self):
+        """
+        Get the experiment runs.
+        """
+
         experiment_id = request.args.get("experiment_id")
 
         if not experiment_id:
@@ -424,6 +490,9 @@ class TrackingRuns(Resource):
             }, 500
 
     def post(self):
+        """
+        Post the request to get run info, parameters and metrics.
+        """
 
         args = self.parser.parse_args()
         experiment_id = args.get("experiment_id")
@@ -499,6 +568,10 @@ class TrackingRuns(Resource):
             }, 500
 
     def delete(self):
+        """
+        Delete run.
+        """
+
         run_id = request.args.get("run_id")
         experiment_id = request.args.get("experiment_id")
 

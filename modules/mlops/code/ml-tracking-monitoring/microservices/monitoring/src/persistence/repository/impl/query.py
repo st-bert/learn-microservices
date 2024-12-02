@@ -18,6 +18,19 @@ class Query(IQuery):
         self.logger = logging.getLogger(__name__)
 
     def select_joined_conditioned_value(self, table_1, table_2, table_3, on_1, on_2, on_3, condition):
+        """
+        Select joined conditioned value from three tables.
+        
+        :param table_1: First table name
+        :param table_2: Second table name
+        :param table_3: Third table name
+        :param on_1: First table column to join on
+        :param on_2: Second table column to join on
+        :param on_3: Third table column to join on
+        :param condition: Condition to filter the joined records
+        :return: List of tuples containing the joined records
+        """
+
         self.cursor = self.db.connection.cursor()
         self.cursor.execute('''
         SELECT * FROM {} join {}

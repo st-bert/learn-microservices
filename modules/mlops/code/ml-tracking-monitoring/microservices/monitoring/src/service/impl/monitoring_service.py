@@ -9,6 +9,12 @@ from persistence.repository.impl.query import Query
 
 class MonitoringService(IService):
     def __init__(self, monitoring_model: IModel, db=None):
+        """
+        Initialize MonitoringService instance.
+        
+        :param monitoring_model: Model instance implementing IModel interface for monitoring
+        :param db: Database connection object, defaults to None
+        """
         self.monitoring_model = monitoring_model
         self.db = db
 
@@ -26,9 +32,17 @@ class MonitoringService(IService):
 
     def init_query(self):
         self.query = Query(self.db)
-        #self.query.samples_columns_name = self.monitoring_model.columns_name
 
     def compute_metric(self, step, tests=None):
+        """
+        Compute monitoring metrics based on specified step.
+        
+        :param step: Type of metric to compute. Must be one of: 'report', 'tests', or 'summary'
+        :param tests: Dictionary of test configurations when step is 'summary'
+        :return: Dictionary containing computed metrics or test results
+        :raises ValueError: If step is not one of the valid options
+        """
+
         result = {}
         if step == "report":
             result = self.report()
@@ -40,6 +54,11 @@ class MonitoringService(IService):
         return result
 
     def report(self):
+        """
+        Compute the report.
+        :return: The report
+        """
+
         self.reference = self.define_set(2)
         self.current = self.define_set(3)
         result = self.compute_report(self.reference, self.current)
@@ -47,6 +66,11 @@ class MonitoringService(IService):
         return result
 
     def tests(self):
+        """
+        Compute the tests.
+        :return: The tests
+        """
+
         self.reference = self.define_set(2)
         self.current = self.define_set(3)
         result = self.compute_tests(self.reference, self.current)
@@ -54,6 +78,12 @@ class MonitoringService(IService):
         return result
 
     def summary(self, tests):
+        """
+        Compute the summary.
+        :param tests: The tests to compute the summary for
+        :return: The summary
+        """
+
         self.reference = self.define_set(2)
         self.current = self.define_set(3)
         self.monitoring_model.define_summary(tests)
@@ -62,6 +92,14 @@ class MonitoringService(IService):
         return result
 
     def define_set(self, dataset_id):
+        """
+        Define and prepare dataset for monitoring.
+        
+        :param dataset_id: ID of the dataset to process
+        :return: Preprocessed DataFrame containing samples, targets, and predictions
+        :raises ValueError: If dataset_id is invalid
+        """
+
         records = self.query.select_joined_conditioned_value(
             "samples", "targets", "predictions",
             "sample_index", "sample_index", "sample_index",
@@ -77,6 +115,14 @@ class MonitoringService(IService):
         return records
 
     def compute_report(self, reference, current):
+        """
+        Compute monitoring report comparing reference and current datasets.
+        
+        :param reference: Reference dataset DataFrame
+        :param current: Current dataset DataFrame
+        :return: Dictionary containing monitoring report results
+        """
+
         self.monitoring_model.report.run(
             reference_data=reference,
             current_data=current,
@@ -88,6 +134,14 @@ class MonitoringService(IService):
         return result
 
     def compute_tests(self, reference, current):
+        """
+        Run monitoring tests comparing reference and current datasets.
+        
+        :param reference: Reference dataset DataFrame
+        :param current: Current dataset DataFrame
+        :return Dictionary containing test results
+        """
+
         self.monitoring_model.tests.run(
             reference_data=reference,
             current_data=current,
@@ -99,6 +153,14 @@ class MonitoringService(IService):
         return result
 
     def compute_summary(self, reference, current):
+        """
+        Generate monitoring summary comparing reference and current datasets.
+        
+        :param reference: Reference dataset DataFrame
+        :param current: Current dataset DataFrame
+        :return: Dictionary containing summary metrics
+        """
+
         self.monitoring_model.summary.run(
             reference_data=reference,
             current_data=current,

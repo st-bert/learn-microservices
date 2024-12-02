@@ -14,6 +14,21 @@ class MonitoringController(IController):
             app_host="127.0.0.1", app_port=5000, app_debug=False, base_url="/root", service_url="/monitoring",
             db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
     ):
+        """
+        Initialize MonitoringController instance.
+        
+        :param monitoring_service: Service implementing IService interface
+        :param app_host: Flask application host, defaults to "127.0.0.1"
+        :param app_port: Flask application port, defaults to 5000
+        :param app_debug: Enable Flask debug mode, defaults to False
+        :param base_url: Base URL for API endpoints, defaults to "/root"
+        :param service_url: Service-specific URL path, defaults to "/monitoring"
+        :param db_host: Database host address, defaults to "127.0.0.1"
+        :param db_port: Database port, defaults to 3306
+        :param db_name: Database name, defaults to ""
+        :param db_user: Database username, defaults to "root"
+        :param db_password: Database password, defaults to "pass"
+        """
         self.monitoring_service = monitoring_service
         self.app_host = app_host
         self.app_port = app_port
@@ -35,6 +50,13 @@ class MonitoringController(IController):
         self.initialize()
 
     def initialize(self):
+        """
+        Initialize Flask application and configure database connection.
+        
+        Sets up Flask app configuration, creates API instance, initializes parser,
+        establishes database connection, and configures logging.
+        :raises MySQLConnectionError: If unable to connect to database
+        """
         self.app = Flask(__name__)
         self.app.config["MYSQL_HOST"] = self.db_host
         self.app.config["MYSQL_PORT"] = self.db_port
@@ -47,7 +69,6 @@ class MonitoringController(IController):
         self.parser = reqparse.RequestParser()
         self.db = MySQL(self.app)
         self.logger = logging.getLogger("werkzeug")
-        # self.log.setLevel(logging.ERROR)
 
         self.monitoring_service.db = self.db
         self.monitoring_service.init_query()
@@ -56,6 +77,9 @@ class MonitoringController(IController):
 
 
     def add_resource(self):
+        """
+        Add the resource to the API.
+        """
         self.api.add_resource(
             Monitoring,
             "".join([self.base_url, self.service_url]),
@@ -67,6 +91,10 @@ class MonitoringController(IController):
         )
 
     def run(self):
+        """
+        Run the Flask application.
+        """
+
         self.app.run(host=self.app_host, port=self.app_port, debug=self.app_debug)
 
 
@@ -83,6 +111,13 @@ class Monitoring(Resource):
         self.parser.add_argument("tests", type=dict)
 
     def get(self):
+        """
+        Get monitoring model information.
+        
+        :return: Dictionary containing model name and status message
+        :rtype: dict
+        """
+
         payload = {
             "name": self.monitoring_service.monitoring_model.name,
             "message": "Monitoring"
@@ -90,6 +125,14 @@ class Monitoring(Resource):
         return payload
 
     def post(self):
+        """
+        Compute monitoring metrics based on request parameters.
+        
+        :return: Dictionary containing computed metrics or test results
+        :rtype: dict
+        :raises ValueError: If invalid metric type or test configuration is provided
+        """
+
         args = self.parser.parse_args()
         metric = args["metric"]
         tests = args["tests"]

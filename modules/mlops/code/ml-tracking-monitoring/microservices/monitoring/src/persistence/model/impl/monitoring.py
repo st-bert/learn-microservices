@@ -48,6 +48,10 @@ class MonitoringModel(IModel):
         }
 
     def define_column_mapping(self):
+        """
+        Define the column mapping for EvidentlyAI.
+        """
+
         self.column_mapping = ColumnMapping()
         self.column_mapping.target = "target"
         # column_mapping.target_names = {0: "first_region", 1: "second_region", 2: "third_region"}
@@ -56,6 +60,10 @@ class MonitoringModel(IModel):
         self.column_mapping.task = "classification"
 
     def define_report(self):
+        """
+        Define EvidentlyAI report.
+        """
+
         self.report = Report(metrics=[
             DataDriftPreset(),
             DataQualityPreset(),
@@ -64,6 +72,10 @@ class MonitoringModel(IModel):
         ])
 
     def define_test(self):
+        """
+        Define EvidentlyAI tests.
+        """
+
         self.tests = TestSuite(tests=[
             DataDriftTestPreset(),
             DataQualityTestPreset(),
@@ -73,6 +85,10 @@ class MonitoringModel(IModel):
         ])
 
     def define_summary(self, tests=None):
+        """
+        Define EvidentlyAI summary.
+        """
+
         applied_tests = [
             DataDriftTestPreset(),
             DataQualityTestPreset(),

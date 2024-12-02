@@ -14,6 +14,21 @@ class SimulatorController(IController):
             app_host="127.0.0.1", app_port=5000, app_debug=False, base_url="/root", service_url="/simulator",
             db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
     ):
+        """
+        Initialize SimulatorController instance.
+        
+        :param simulator_service: Service implementing IService interface
+        :param app_host: Flask application host address
+        :param app_port: Flask application port number
+        :param app_debug: Enable Flask debug mode
+        :param base_url: Base URL for API endpoints
+        :param service_url: Service-specific URL path
+        :param db_host: Database host address
+        :param db_port: Database port number
+        :param db_name: Database name
+        :param db_user: Database username
+        :param db_password: Database password
+        """
         self.simulator_service = simulator_service
         self.app_host = app_host
         self.app_port = app_port
@@ -35,6 +50,13 @@ class SimulatorController(IController):
         self.initialize()
 
     def initialize(self):
+        """
+        Initialize Flask application and configure database connection.
+        
+        Sets up Flask app configuration, creates API instance, initializes parser,
+        establishes database connection, and configures logging.
+        :raises MySQLConnectionError: If unable to connect to database
+        """
         self.app = Flask(__name__)
         self.app.config["MYSQL_HOST"] = self.db_host
         self.app.config["MYSQL_PORT"] = self.db_port
@@ -57,6 +79,9 @@ class SimulatorController(IController):
 
 
     def add_resource(self):
+        """
+        Add the resource.
+        """
         self.api.add_resource(
             Simulator,
             "".join([self.base_url, self.service_url]),
@@ -68,12 +93,25 @@ class SimulatorController(IController):
         )
 
     def set_db(self):
+        """
+        Set up and initialize the database.
+        
+        Creates required database tables, clears existing records,
+        and inserts initial dataset records.
+        :raises DatabaseError: If database operations fail
+        """
         self.simulator_service.create_tables()
         self.simulator_service.delete_records()
 
         self.simulator_service.insert_records("dataset")
 
     def run(self):
+        """
+        Run the Flask application server.
+        
+        :param self: Instance of SimulatorController
+        :return: None
+        """
         self.app.run(host=self.app_host, port=self.app_port, debug=self.app_debug)
 
 
@@ -86,9 +124,16 @@ class Simulator(Resource):
         self.initialization()
 
     def initialization(self):
+        """
+        Initialize the parser.
+        """
         self.parser.add_argument("set_name")
 
     def get(self):
+        """
+        Get the simulator name.
+        :return payload of the response with the name and message
+        """
         payload = {
             "name": self.simulator_service.simulator_model.name,
             "message": "Simulator"
@@ -96,6 +141,10 @@ class Simulator(Resource):
         return payload
 
     def post(self):
+        """
+        Post the simulator name.
+        :return payload of the response with the name and message
+        """
         try:
             args = self.parser.parse_args()
             set_name = args["set_name"]

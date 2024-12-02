@@ -27,6 +27,12 @@ from src.persistence.repository.impl.query import Query
 
 class TrackingService(IService):
     def __init__(self, tracking_model: IModel, db=None):
+        """
+        Initialize TrackingService instance.
+        
+        :param tracking_model: Model instance implementing IModel interface for tracking
+        :param db: Database connection object, defaults to None
+        """
 
         self.tracking_model = tracking_model
         self.db = db
@@ -45,6 +51,19 @@ class TrackingService(IService):
         self.query = Query(self.db, self.mlflow)
 
     def track_optimization_info(self, models, hyperparameters, scoring, cv, experiment_name, description, owner):
+        """
+        Track model optimization information and results.
+        
+        :param models: List of model names to optimize
+        :param hyperparameters: Dictionary of hyperparameter grids for each model
+        :param scoring: Scoring metric for optimization
+        :param cv: Number of cross-validation folds
+        :param experiment_name: Name of the MLflow experiment
+        :param description: Description of the experiment
+        :param owner: Name of experiment owner
+        :return: List of MLflow run IDs for the experiment
+        :raises MLflowException: If there's an error logging to MLflow
+        """
 
         training_records = self.query.select_joined_conditioned_value("samples", "targets", "sample_index",
                                                                       "sample_index", 1)
@@ -54,12 +73,27 @@ class TrackingService(IService):
         return id_runs
 
     def compute_metrics(self, y_true, y_pred):
+        """
+        Compute classification metrics for model evaluation.
+        
+        :param y_true: Array-like of true labels
+        :param y_pred: Array-like of predicted labels
+        :return: Dictionary containing accuracy, f1_score, precision, and recall metrics
+        """
+
         metrics = {'accuracy': accuracy_score(y_true, y_pred), 'f1_score': f1_score(y_true, y_pred, average='weighted'),
                    'precision': precision_score(y_true, y_pred, average='weighted'),
                    'recall': recall_score(y_true, y_pred, average='weighted')}
         return metrics
 
     def define_set(self, records):
+        """
+        Define the set.
+        :param records: The records of the training set
+        :return X: The features
+        :return y: The target
+        """
+
         records = pd.DataFrame(records)
         self.prediction = records["sample_index"].to_frame(name="sample_index")
         records = records.drop(columns=[
@@ -72,6 +106,17 @@ class TrackingService(IService):
         return X, y
 
     def perform_optimization(self, X, y, models, hyperparameters, scoring, cv):
+        """
+        Perform the optimization.
+        :param X: The features
+        :param y: The target
+        :param models: The models to optimize
+        :param hyperparameters: The hyperparameters for the models
+        :param scoring: The scoring method
+        :param cv: The cross-validation folds
+        :return optimized_results: The optimized results
+        """
+
         optimized_results = {}
         for model_name in models:
             start_time = time.time()
@@ -102,6 +147,18 @@ class TrackingService(IService):
 
     def log_to_mlflow(self, models_results, experiment_name, X_train, y_train, scoring_grid_search, cv, param_grid,
                       description, owner):
+        """
+        Log to MLFlow.
+        :param models_results: The optimized results
+        :param experiment_name: The experiment name to track
+        :param X_train: The features of the training set
+        :param y_train: The target of the training set
+        :param scoring_grid_search: The scoring method
+        :param cv: The cross-validation folds
+        :param param_grid: The hyperparameters for the models
+        :param description: The description of the experiment
+        :param owner: The owner of the experiment
+        """
 
         experiment_id = self.create_mlflow_experiment(experiment_name, tag={"description": description, "owner": owner})
 
@@ -152,6 +209,13 @@ class TrackingService(IService):
         return run_id_dict
 
     def create_mlflow_experiment(self, experiment_name, tag):
+        """
+        Create the MLFlow experiment.
+        :param experiment_name: The experiment name to track
+        :param tag: The tag of the experiment
+        :return experiment_id: The id of the experiment
+        """
+
         self.logger.info(f"Creating experiment: {experiment_name}")
 
         try:
@@ -169,6 +233,13 @@ class TrackingService(IService):
             raise RuntimeError(f"Error in Experiment Creation: {e}")
 
     def get_experiment_info(self, experiment, experiment_runs):
+        """
+        Get the experiment info.
+        :param experiment: The experiment
+        :param experiment_runs: The runs of the experiment
+        :return experiment_info: The experiment info
+        """
+
         experiment_info = {
             "experiment_info": {
                 "experiment_id": experiment.experiment_id,
@@ -196,6 +267,13 @@ class TrackingService(IService):
         return experiment_info
 
     def get_best_model(self, experiment_runs, filter_req):
+        """
+        Get the best model.
+        :param experiment_runs: The runs of the experiment
+        :param filter_req: The filter request
+        :return best_run_info: The best run info
+        """
+
         if not filter_req or len(filter_req) == 0:
             raise ValueError("At least one filter (metric) is required.")
 
@@ -229,6 +307,12 @@ class TrackingService(IService):
         return best_run_info
 
     def calculate_statistics(self, data):
+        """
+        Calculate the statistics.
+        :param data: The data
+        :return statistics: The statistics
+        """
+
         if not data:
             return {
                 "mean": 0,
@@ -267,6 +351,13 @@ class TrackingService(IService):
         }
 
     def get_statistics(self, experiment_runs, filter_req):
+        """
+        Get the statistics.
+        :param experiment_runs: The runs of the experiment
+        :param filter_req: The filter request
+        :return statistics: The statistics
+        """
+
         durations, accuracies, f1_scores, precisions, recalls = [], [], [], [], []
 
         for _, run_series in experiment_runs.iterrows():
@@ -307,6 +398,12 @@ class TrackingService(IService):
         return stats
 
     def get_experiment_runs(self, experiment_id):
+        """
+        Get the experiment runs.
+        :param experiment_id: The id of the experiment
+        :return runs_list: The runs list
+        """
+
         runs_list = []
 
         experiment_runs = self.mlflow.search_runs([experiment_id])
@@ -328,6 +425,15 @@ class TrackingService(IService):
         return runs_list if runs_list else None
 
     def get_run_parameters(self, run, parameter_type):
+        """
+        Extract parameters of specified type from MLflow run.
+        
+        :param run: MLflow Run object
+        :param parameter_type: Type of parameters to extract ('data', 'grid_search', or 'model')
+        :return: Dictionary of filtered parameters
+        :raises ValueError: If parameter_type is invalid
+        """
+
         run_params = run.data.params
         return {
             key.replace(f"{parameter_type}_", ""): value
@@ -336,6 +442,15 @@ class TrackingService(IService):
         }
 
     def get_run_metrics(self, run, metric_type):
+        """
+        Extract metrics of specified type from MLflow run.
+        
+        :param run: MLflow Run object
+        :param metric_type: Type of metrics to extract ('system' or 'model')
+        :return: Dictionary of filtered metrics
+        :raises ValueError: If metric_type is invalid
+        """
+
         run_metrics = run.data.metrics
         return {
             key.replace(f"{metric_type}_", ""): value
@@ -344,6 +459,12 @@ class TrackingService(IService):
         }
 
     def track_model_setting(self, run):
+        """
+        Track the model setting.
+        :param run: The run
+        :return model_info: The model info
+        """
+
         parameters = self.get_run_parameters(run, "model")
         hyperparameters = {
             k: identify_value_type(v)
@@ -357,6 +478,12 @@ class TrackingService(IService):
 
 
 def identify_value_type(value):
+    """
+    Identify the value type.
+    :param value: The value
+    :return value: The value
+    """
+
     if value in ['null', 'None']:
         return None
     if isinstance(value, str):
@@ -370,10 +497,16 @@ def identify_value_type(value):
     return value
 
 def get_model_by_name(model_name):
-        models_dict = {
-            "LogisticRegression": LogisticRegression(),
-            "RandomForest": RandomForestClassifier(),
-            "SVC": SVC(),
-        }
-        return models_dict.get(model_name)
+    """
+    Get the model by name.
+    :param model_name: The name of the model
+    :return model: The model
+    """
+
+    models_dict = {
+        "LogisticRegression": LogisticRegression(),
+        "RandomForest": RandomForestClassifier(),
+        "SVC": SVC(),
+    }
+    return models_dict.get(model_name)
 

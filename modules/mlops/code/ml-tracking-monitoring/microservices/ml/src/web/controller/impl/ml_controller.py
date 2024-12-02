@@ -14,6 +14,21 @@ class MLController(IController):
             app_host="127.0.0.1", app_port=5000, app_debug=False, base_url="/root", service_url="/ml",
             db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
     ):
+        """
+        Initialize MLController instance.
+        
+        :param ml_service: Service implementing IService interface
+        :param app_host: Flask application host, defaults to "127.0.0.1"
+        :param app_port: Flask application port, defaults to 5000
+        :param app_debug: Enable Flask debug mode, defaults to False
+        :param base_url: Base URL for API endpoints, defaults to "/root"
+        :param service_url: Service-specific URL path, defaults to "/ml"
+        :param db_host: Database host address, defaults to "127.0.0.1"
+        :param db_port: Database port, defaults to 3306
+        :param db_name: Database name, defaults to ""
+        :param db_user: Database username, defaults to "root"
+        :param db_password: Database password, defaults to "pass"
+        """
         self.ml_service = ml_service
         self.app_host = app_host
         self.app_port = app_port
@@ -35,6 +50,13 @@ class MLController(IController):
         self.initialize()
 
     def initialize(self):
+        """
+        Initialize Flask application and configure database connection.
+        
+        Sets up Flask app configuration, creates API instance, initializes parser,
+        establishes database connection, and configures logging.
+        """
+
         self.app = Flask(__name__)
         self.app.config["MYSQL_HOST"] = self.db_host
         self.app.config["MYSQL_PORT"] = self.db_port
@@ -56,6 +78,13 @@ class MLController(IController):
 
 
     def add_resource(self):
+        """
+        Add API resources to Flask application.
+        
+        Registers the Model and SetModel resources with their respective endpoints
+        and configures their dependencies.
+        """
+
         self.api.add_resource(
             Model,
             "".join([self.base_url, self.service_url]),
@@ -76,6 +105,10 @@ class MLController(IController):
         )
 
     def run(self):
+        """
+        Run the Flask application.
+        """
+
         self.app.run(host=self.app_host, port=self.app_port, debug=self.app_debug)
 
 
@@ -91,6 +124,14 @@ class SetModel(Resource):
         self.parser.add_argument("hyperparameters", type=dict, location='json', help="hyperparameters of model")
 
     def post(self):
+        """
+        Handle POST request to set model configuration.
+        
+        :return: Tuple of (response_dict, http_status_code)
+        :raises KeyError: If required parameters are missing
+        :raises ValueError: If invalid parameter values are provided
+        """
+
         args = self.parser.parse_args()
         model_name = args["model_name"]
         hyperparameters = args["hyperparameters"]
@@ -139,6 +180,11 @@ class Model(Resource):
         self.parser.add_argument("dataset")
 
     def get(self):
+        """
+        Get the model from the database.
+        :return payload of the response with the name and message
+        """
+
         payload = {
             "name": self.ml_service.ml_model.name,
             "message": "ML model"
@@ -146,6 +192,11 @@ class Model(Resource):
         return payload
 
     def post(self):
+        """
+        Post the score of the model on the dataset.
+        :return payload of the response with the message
+        """
+
         args = self.parser.parse_args()
         dataset = args["dataset"]
 
