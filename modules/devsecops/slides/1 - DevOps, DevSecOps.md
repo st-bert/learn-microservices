@@ -57,7 +57,7 @@ To streamline and automate these tasks, we can adopt **DevOps** practices.
 ## Brief history of software production models
 The software production lifecycle consists of three essential stages, each playing a critical role in delivering a high-quality product that meets client expectations and performs reliably in a live environment:
 
-1. **Client and Requirements Gathering**
+1. **Requirements Gathering**
     - Collaborate with the client to understand their needs, goals, and expectations.
     - Define the scope, functionality, and specifications of the software.
     - Document requirements to guide the development process.
@@ -91,6 +91,11 @@ However, it neglects the operational aspects of software production leading to f
 
 ### The DevOps model
 
+In the DevOps model, **development** and **operations** teams no longer work in isolation. Instead, they often integrate into a single unit, where engineers participate throughout the application lifecycle — from **development** and **testing** to **deployment** and **production** — and gain a versatile skill set that spans multiple functions.
+
+Teams use **automation** to accelerate traditionally slow, manual processes. DevOps tools and technologies enable faster, more **reliable** deployment and evolution of applications. These tools also empower teams to handle tasks that once required support from other departments, such as **code deployment** or **infrastructure provisioning**, boosting overall **efficiency**.
+
+
 ![](images/devops-devops.webp)
 
 **1. Plan** The business value and requirements are defined. Teams establish the project goals and identify the necessary elements for the upcoming release. **Tools**: Jira
@@ -110,13 +115,6 @@ However, it neglects the operational aspects of software production leading to f
 
 ## DevOps
 
-In the DevOps model, **development** and **operations** teams no longer work in isolation.
-
-Instead, they often integrate into a single unit, where engineers participate throughout the application lifecycle — from **development** and **testing** to **deployment** and **production** — and gain a versatile skill set that spans multiple functions.
-
-Teams use **automation** to accelerate traditionally slow, manual processes. DevOps tools and technologies enable faster, more **reliable** deployment and evolution of applications.
-
-These tools also empower teams to handle tasks that once required support from other departments, such as **code deployment** or **infrastructure provisioning**, boosting overall **efficiency**.
 
 ### Definition
 
