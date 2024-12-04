@@ -1,4 +1,4 @@
-# DevOps, DevSecOps (GitLab CI, GitGuardian, SemGrep, Trivy, Google Cloud VM)
+# DevOps, DevSecOps (GitHub Actions, GitGuardian, SemGrep, Trivy, Google Cloud VM)
 
 ## Introduction to GitHub Actions
 
