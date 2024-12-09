@@ -29,7 +29,7 @@ To ensure a successful order processing service, all four microservices must com
 * *Atomicity* ensures that all or none of the steps of a transaction should complete.
 * *Consistency* takes data from one valid state to another valid state. 
 * *Isolation* guarantees that concurrent transactions should produce the same result that sequentially transactions would have produced. 
-* Durability* means that committed transactions remain committed irrespective of any type of system failure.
+* *Durability* means that committed transactions remain committed irrespective of any type of system failure.
 
 **The second challenge is managing the transaction isolation level**. It specifies the amount of data that is visible in a transaction when the other services access the same data simultaneously. In other words, if one object in one of the microservices is persisted in the database while another request reads the data, should the service return the old or new data?
 
@@ -187,10 +187,10 @@ The Choreography pattern works well when there are fewer participants in the tra
 
 ### Saga Frameworks
 Here are a few frameworks available to implement the Saga pattern:
+* [Orkes Conductor](https://www.orkes.io/what-is-conductor)
 * [Eclipse MicroProfile LRA](https://github.com/eclipse/microprofile-lra)
 * [Eventuate Tram Saga](https://eventuate.io/docs/manual/eventuate-tram/latest/getting-started-eventuate-tram-sagas.html)
 * [Seata](https://www.seata.io/docs/dev/mode/saga-mode/)
-* [Orkes Conductor](https://www.orkes.io/what-is-conductor)
 * [Camunda](https://camunda.com/)
 * [Apache Camel](https://camel.apache.org/components/latest/eips/saga-eip.html) 
 

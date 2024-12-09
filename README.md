@@ -67,8 +67,9 @@ Your pull requests are very welcome! To contribute, please refer to [this](https
 * The *Conductor* orchestration framework
 
 [M9 DevSecOps](modules/devsecops)
-* DevOps and their benefits in distributed contexts
-* Automating security tests before deployment
+* The DevOps model and its benefits 
+* Automating code linting and security testing in automated builds 
+* GitHub Actions Workflows
 
 [M10 MLOps](modules/mlops)
 * MLOps and their benefits in distributed contexts

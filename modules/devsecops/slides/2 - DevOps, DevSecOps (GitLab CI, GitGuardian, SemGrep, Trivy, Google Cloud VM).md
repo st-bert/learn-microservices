@@ -1,622 +1,369 @@
-# DevOps, DevSecOps (GitLab CI, GitGuardian, SemGrep, Trivy, Google Cloud VM)
+# DevOps, DevSecOps (GitHub Actions, GitGuardian, SemGrep, Trivy, Google Cloud VM)
 
-## Introduction
+## Introduction to GitHub Actions
 
-For this tutorial we will use the [Microservices with Spring Boot and Spring Cloud Third Edition's Chapter 6 code](https://github.com/PacktPublishing/Microservices-with-Spring-Boot-and-Spring-Cloud-Third-Edition/tree/main/Chapter06).
+GitHub Actions is a workflow automation tool integrated into GitHub repositories. It allows developers to define custom workflows for automating tasks such as building, testing, and deploying applications. GitHub Actions supports **Continuous Integration (CI)** and **Continuous Deployment (CD)** processes, enabling teams to ensure code quality and deliver software quickly.
 
-We will impersonate the developing team of the **product-service** microservice and build a **DevSecOps pipeline** for our service.
+### Key Concepts of GitHub Actions
 
-The entire code will be finally publish inside a **Google Cloud VM** in the deploy stage of our pipeline.
+- **Workflow**: A YAML file that defines a set of jobs to be executed when specific events occur (e.g., `push`, `pull_request`).
+- **Job**: A collection of steps that run on a specified virtual environment (e.g., `ubuntu-latest`).
+- **Step**: An individual task within a job, such as running a script or executing an action.
+- **Actions**: Predefined or custom reusable commands.
+- **Secrets**: Encrypted variables used to secure sensitive information (e.g., API keys).
 
-## GitLab CI
+### Running Jobs in GitHub Actions
 
-To achieve the complete fundamentals of full CI/CD, many CI platforms rely on integrations with various tools to meet these needs. This often leads organizations to maintain complex and costly toolchains to enable comprehensive CI/CD capabilities. Typically, this requires managing a separate source control management (SCM) system like Bitbucket or GitHub, linking it to a distinct testing tool, which then connects to a CI tool, that interfaces with a deployment tool like Chef or Puppet, while also integrating with multiple security and monitoring solutions.
+In GitHub Actions, jobs are the primary unit of work in a workflow. Jobs can be executed either **in parallel** or **sequentially** depending on the configuration in the YAML file.
 
-As a result, organizations find themselves focused not just on building great software but also on managing and maintaining a complicated toolchain. In contrast, GitLab offers a unified solution for the entire DevSecOps lifecycle, providing all the essential CI/CD functionalities within a single application. This streamlines processes, reduces complexity, and allows teams to concentrate on delivering high-quality software.
+#### Parallel Execution of Jobs
 
-In order to build a new GitLab pipeline, we need to create a **.gitlab-ci.yml** file with the list of all stages in order.
+By default, jobs in a GitHub Actions workflow run **in parallel**, meaning they will start at the same time and run concurrently, provided they do not have dependencies on each other.
 
-```bash
-touch .gitlab-ci.yml
+This is useful for tasks that are independent of each other, allowing you to speed up your CI/CD pipeline by running jobs simultaneously.
+
+**Example** (Parallel Execution):
+```yaml
+name: Parallel Jobs Example
+
+on: [push]
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Job 1"
+
+  job2:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Job 2"
+
+  job3:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Job 3"
 ```
+In the example above, `job1`, `job2`, and `job3` will run in parallel because they do not have any dependencies defined between them.
 
-We can configure a **default** image that will run our tasks inside each stage.
+#### Sequential Execution of Jobs
 
-By default, we will use the **docker:latest** image with the **docker:dind** service that allow us to use the docker command inside a container. This is useful in order to **push** our container image into a **container registry**.
+To run jobs sequentially, meaning one job starts only after the completion of another, you can use the `needs` keyword. This allows you to define a dependency between jobs, where a job will only execute after another job successfully finishes.
 
-```yml
-image: docker:latest
-services:
-  - docker:dind
+**Example** (Sequential Execution):
+```yaml
+name: Sequential Jobs Example
+
+on: [push]
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Job 1"
+  
+  job2:
+    runs-on: ubuntu-latest
+    needs: job1  # job2 will start after job1 finishes
+    steps:
+      - run: echo "Job 2"
+  
+  job3:
+    runs-on: ubuntu-latest
+    needs: job2  # job3 will start after job2 finishes
+    steps:
+      - run: echo "Job 3"
 ```
+In this case:
+- `job1` runs first.
+- `job2` starts only after `job1` completes successfully.
+- `job3` starts only after `job2` completes successfully.
 
-After that, we can define the stages that comprise our pipeline:
+#### Combining Parallel and Sequential Jobs
 
-```yml
-stages:
-  - Lint
-  - Test
-  - Build
-  - Package
-  - Scan
-  - Deploy
+You can also combine parallel and sequential jobs in a single workflow. Some jobs may need to run sequentially (due to dependencies), while others can run in parallel.
+
+**Example** (Parallel and Sequential Combination):
+```yaml
+name: Mixed Jobs Example
+
+on: [push]
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Job 1"
+  
+  job2:
+    runs-on: ubuntu-latest
+    needs: job1  # Runs after job1
+    steps:
+      - run: echo "Job 2"
+
+  job3:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Job 3"
+  
+  job4:
+    runs-on: ubuntu-latest
+    needs: [job2, job3]  # Runs after both job2 and job3
+    steps:
+      - run: echo "Job 4"
 ```
+In this case:
+- `job1` runs first.
+- `job2` starts after `job1` completes.
+- `job3` runs in parallel with `job2`.
+- `job4` runs only after both `job2` and `job3` finish.
 
-We can now define the tasks that will execute in each stage.
+## Continuous Delivery DevOps Workflow
 
-All tasks within the same stage will run in **parallel**.
+The following configuration file defines a CI/CD pipeline for a Java project. It includes steps for linting, security scanning, building, and deploying a Docker image. Here's how to assemble it step by step.
 
-For now, we will focus on defining tasks for the **Build** stage and the **Package** stage:
+### Define Workflow Metadata
 
-```yml
-🛠️ Build:
-  stage: Build
-  image: gradle:7.6.4-jdk17
-  only:
-    - main
-  script:
-    - gradle clean build -x test
-  artifacts:
-    paths:
-      - build/libs/*.jar
-    expire_in: 1 week
-
-📦 Package:
-  stage: Package
-  only:
-    - main
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin
-  script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE --all-tags
-```
-
-Within the **Build** stage, we will compile all the application's artifacts that will be utilized in the **Package** stage to create the new container image for the microservice and push it to the **GitLab Container Registry**.
-
-We can use the **only** tag to specify the branches where this task will be applied. Additionally, we can employ **regex** rules to define the branch names.
-
-In our scenario, we will apply this tag to the **build**, **package**, and **deploy** stages. Our goal is to publish only **stable** versions of our code.
-
-## Lint Stage
-
-In order to check the correctness of the style of our code, we can use the [Google Java Formatter](https://github.com/google/google-java-format) tool.
-
-We can now integrate this script in our **GitLab pipeline** by creating a **new task** for the **Lint stage**:
-
-```yml
-🔎 Lint:
-  stage: Lint
-  image: gradle:7.6.4-jdk17
-  before_script:
-    - wget https://github.com/google/google-java-format/releases/download/v1.22.0/google-java-format-1.22.0-all-deps.jar
-  script:
-    - java -jar google-java-format-1.22.0-all-deps.jar --set-exit-if-changed --dry-run `git ls-files -z  '*.java' | xargs -0`
-```
-
-Now the style will be verified, based on the **Google Java Style Rules**, on each commit.
-
-## DevSecOps operations
-
-Inside the **Test** stage we can add some security checks for our DevSecOps pipeline.
-
-In this case we will use [GitGuardian](#gitguardian), [Semgrep](#semgrep) and [Trivy](#trivy).
-
-### GitGuardian
-
-Focuses on securing your software development process by identifying and preventing **leaks** of **secrets** (like **passwords**) and **sensitive data**, as well as **misconfigurations** in code. It emphasizes developer-friendly features for early detection and mitigation of these issues.
-
-#### Installation
-
-Create a service account from the API section of your GitGuardian workspace (or a [personal access token](https://dashboard.gitguardian.com/api/personal-access-tokens) if you are on the Free plan).
-
-Add this API key to the **GITGUARDIAN_API_KEY** environment variable in your project settings.
-
-![GitLab Variables](images/devops-GitLab-variables.webp)
-
-Add a new step using **ggshield** to your GitLab project's pipeline.
-
-```yml
-🦉 GitGuardian:
-  image: gitguardian/ggshield:latest
-  stage: Test
-  script:
-    - ggshield secret scan ci
-```
-
-### Semgrep
-
-Acts as a code scanner to pinpoint **vulnerabilities** within your application code. It can be integrated throughout the development lifecycle to identify potential security flaws during various stages.
-
-#### Installation
-
-Create a [new API token](https://semgrep.dev/orgs/-/setup/gitlab/manual) in the Semgrep dashboard.
-
-Add this API key to the **SEMGREP_APP_TOKEN** environment variable in your project settings.
-
-Add a new step using **semgrep ci** to your GitLab project's pipeline.
+Start with the workflow's name and triggers:
 
 ```yaml
-🐞 Semgrep:
-  image: semgrep/semgrep:latest
-  stage: Test
-  script:
-    - semgrep ci
+name: CI-CD Workflow
+
+on:
+  push:
+    branches: [ "main" ] # Trigger on pushes to the main branch
+  pull_request:
+    branches: [ "main" ] # Trigger on pull requests targeting the main branch
 ```
 
-### Trivy
+- **`name`**: Descriptive title for the workflow.
+- **`on`**: Specifies the events that trigger the workflow (`push`, `pull_request`).
 
-Specializes in vulnerability scanning for **containers** and **software artifacts**. It can detect vulnerabilities in operating system **packages**, **libraries**, and other **components** used to build your software.
 
-#### Installation
+### Add Jobs Section
 
-We need to add a Trivy scan for the **repository** in the **Test** stage:
+Jobs define the tasks to execute. Each job runs independently unless dependencies are specified. In this example, we define:
+
+1. **Lint Scan**: Checks code quality using Super-Linter.
+2. **Build Artifact**: Builds a Java artifact using Maven.
+3. **Build and Push Docker Image**: Builds and pushes a Docker image.
+4. **GitGuardian Scan**: Scans for exposed secrets.
+5. **Semgrep Scan**: Performs static security analysis.
+
+
+### Define the `lint-scan` Job
+
+**Super Linter** is a powerful GitHub Action that helps automate the process of linting code in various programming languages. It is designed to detect syntax and style issues in your code, ensuring that it adheres to best practices and code standards. The Super Linter action supports a wide range of languages, including Python, JavaScript, Java, Ruby, Go, and more, making it an excellent choice for multi-language projects.
+
+- **Multi-Language Support**: Super Linter supports dozens of programming languages, helping developers ensure consistent code quality across various files.
+- **Customizable**: You can configure Super Linter to use specific linters for different languages, providing flexibility to match your project’s needs.
+- **GitHub Integration**: It seamlessly integrates with GitHub Actions, enabling automatic linting as part of your CI/CD pipeline.
+- **Easy Setup**: With just a few lines in your GitHub Actions workflow file, you can set up Super Linter and start linting your code.
 
 ```yaml
-🛡️ Trivy Repository:
-  stage: Test
-  image:
-    name: docker.io/aquasec/trivy:latest
-    entrypoint: [""]
-  variables:
-    GIT_STRATEGY: none
-    TRIVY_USERNAME: "$CI_REGISTRY_USER"
-    TRIVY_PASSWORD: "$CI_REGISTRY_PASSWORD"
-    TRIVY_AUTH_URL: "$CI_REGISTRY"
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-  script:
-    - trivy --version
-    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-    - trivy image --clear-cache
-    - echo "Scanning Current Repository"
-    - trivy fs --cache-dir .trivycache/ --severity HIGH,CRITICAL $CI_PROJECT_DIR
-  cache:
-    paths:
-      - .trivycache/
+lint-scan:
+  runs-on: ubuntu-latest
+  permissions:
+    contents: read
+    packages: read
+    statuses: write
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run Super-Linter
+      uses: super-linter/super-linter@v7.2.0
+      env:
+        VALIDATE_JAVA: true
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
 ```
 
-We can use Trivy, another time, to make a scan of the **pushed container image**, in order to check all **image layers** to find some vulnerabilities, in the **Scan** stage:
+- **`runs-on`**: Specifies the virtual environment (e.g., Ubuntu).
+- **Steps**:
+    - **Checkout code**: Fetches the repository contents.
+    - **Run Super-Linter**: Validates Java files using a linter.
+
+
+### Add the `build-artifact` Job
 
 ```yaml
-🛡️ Trivy Image:
-  stage: Scan
-  image:
-    name: docker.io/aquasec/trivy:latest
-    entrypoint: [""]
-  variables:
-    GIT_STRATEGY: none
-    TRIVY_USERNAME: "$CI_REGISTRY_USER"
-    TRIVY_PASSWORD: "$CI_REGISTRY_PASSWORD"
-    TRIVY_AUTH_URL: "$CI_REGISTRY"
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  script:
-    - trivy --version
-    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-    - trivy image --clear-cache
-    - echo "Scanning Current Repository"
-    - trivy image --cache-dir .trivycache/ --severity HIGH,CRITICAL --scanners vuln $FULL_IMAGE_NAME -f json -o gl-container-scanning-report.json
-  cache:
-    paths:
-      - .trivycache/
-  artifacts:
-    reports:
-      container_scanning: gl-container-scanning-report.json
+build-artifact:
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Java Environment
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build with Maven
+      run: mvn --batch-mode --update-snapshots verify
+
+    - name: Copy Build Artifact
+      run: mkdir staging && cp target/*.jar staging
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: jar-artifact
+        path: staging
 ```
 
-Now if **Trivy** will find vulnerabilities on some libraries version, it will write it on the **report file**.
+This job builds the project and saves the JAR artifact.
 
-## Deploy to Google Cloud Platform (VM)
 
-### Create a new Google Cloud VM
+### Add the `build-push-container-image` Job
 
-For the **Deploy** stage we will use the **Google Cloud Platform** to host a virtual machine that will run our services.
+```yaml
+build-push-container-image:
+  runs-on: ubuntu-latest
+  needs: build-artifact
 
-Enable the **Compute Engine API** on your Google Cloud project.
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-Create a new **VM instance**.
+    - name: Download Build Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: jar-artifact
+        path: target/
 
-### Create SSH key pair
+    - name: Build Docker Image
+      run: docker build -t nbicocchi/product-service-ci-cd:latest .
 
-Connect with **ssh** of Google Cloud to the **VM** and **create** a new **ssh key pair**:
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-```bash
-ssh-keygen -f key
+    - name: Push Docker Image to Docker Hub
+      run: docker push nbicocchi/product-service-ci-cd:latest
 ```
 
-Insert the public key into **authorized_keys** file:
+This job builds a Docker image, scans it for vulnerabilities using Trivy, and pushes it to Docker Hub.
 
-```bash
-mkdir ~/.ssh; echo -n 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC8SmoD3FAVc65S23jTue6iFf2dpUZmMJLmgCdVCCDH46fKJNn4BptL6nGMkGA3qx+3iTUsN9WJHHe1g2Zb+BuFU2eB7BpJGbrrsIzglU4b2NFvoph9nQIg/VJXFHAqLe6RJUmzi27T8Cn8wZ06KCg7kqjfKfkhesd5E8TvlNtn1VEETucrFlihcrahydrZRszdqLdzgsNX4fkFsvBjqIRC7mE0gHclFC4QeDdgPiU61s2S27c1dgyrkUt/occgAHgD624z0tYaMeiB97MGbIVdwHYPWOe/oaoyazWNvbyoMcFLJaQYrWeDx1AlhELZ81tXITmzoIeYM03Ajba+HojgEPqnzhRox+oft28JptkQgqymMAMDPQZZ9mXz5zt7niKKR3jhyym8j0Aez8rmh1NxxepxxYEpHWJzcIoVUUAdkwhrabItMm475CdebjYemKwEOp+B8S7neBq3el7oskCffQbY9pFR7Y0mHjz5ByWyh4kAUbhjx6qUA81y9zpsiAk= michele@vivobook' >> ~/.ssh/authorized_keys
+## Continuous Deployment DevOps Workflow
+... Deploy on GCP...
+
+## DevSecOpc Workflow
+
+### GitGuardian: A Secret Detection Tool
+
+**GitGuardian** is a security tool designed to detect sensitive information (secrets) such as API keys, passwords, and tokens in source code repositories. It helps organizations secure their codebases by preventing accidental leaks of confidential data.
+
+- **Secret Detection**: Identifies hardcoded secrets like API keys, access tokens, and private credentials that may have been inadvertently committed to version control.
+- **Real-Time Scanning**: Continuously scans repositories for secrets, either on push or in pull requests, to ensure that sensitive data does not get exposed.
+- **Comprehensive Coverage**: Supports a variety of file types and languages, detecting secrets across code, configuration files, and even documentation.
+- **Integrations**: Easily integrates with GitHub, GitLab, and other version control systems, as well as CI/CD pipelines, to provide automated secret detection.
+
+```yaml
+gitguardian-scan:
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run GitGuardian Secret Scan
+      uses: GitGuardian/ggshield/actions/secret@v1.34.0
+      env:
+        GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
 ```
 
-We can now connect with **ssh** usign our private key:
+* Create a service account from the API section of your GitGuardian workspace (or a [personal access token](https://dashboard.gitguardian.com/api/personal-access-tokens) if you are on the Free plan).
+* Add this API key to the **GITGUARDIAN_API_KEY** secret in your project settings.
 
-```bash
-ssh -i key michele_mosca026@34.89.80.17
+
+### Semgrep: A Static Code Analysis Tool
+
+**Semgrep** is a powerful, fast, and flexible static code analysis tool designed to find vulnerabilities, enforce coding standards, and detect patterns in codebases. It is used for security scanning, bug hunting, and code quality checks.
+
+- **Pattern Matching**: Allows users to define custom patterns for detecting specific code issues, such as security vulnerabilities, anti-patterns, or code smells.
+- **Multi-Language Support**: Works with a wide range of programming languages, including Python, JavaScript, Go, Java, and many more.
+- **High Customizability**: Users can write their own rules or use community-contributed rules tailored for various security concerns or coding standards.
+- **Integration with CI/CD**: Easily integrates into CI/CD pipelines for continuous security and quality checks during code development and deployment.
+
+```yaml
+semgrep-scan:
+  runs-on: ubuntu-latest
+  container:
+    image: semgrep/semgrep
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Semgrep Scan
+      run: semgrep ci
+      env:
+        SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 ```
 
-### Install Docker and Docker Compose
+* Create a [new API token](https://semgrep.dev/orgs/-/setup/gitlab/manual) in the Semgrep dashboard.
 
-We need to setup our **VM** by install **docker** and **docker-compose**, so first run this command:
+* Add this API key to the **SEMGREP_APP_TOKEN** secret in your project settings.
 
-```bash
-for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
+
+
+### Trivy: A Vulnerability Scanning Tool
+
+**Trivy** is a versatile and easy-to-use security tool designed to detect vulnerabilities in software components. It is widely used in DevOps workflows for ensuring secure deployments.
+
+- **Vulnerability Detection**: Scans operating system packages and application dependencies for known security vulnerabilities.
+- **Container Image Scanning**: Identifies vulnerabilities in Docker images, including both OS-level issues and library dependencies.
+- **Infrastructure as Code (IaC) Scanning**: Examines IaC configurations (e.g., Terraform, Kubernetes manifests) for misconfigurations.
+- **Versatile Output Formats**: Supports detailed reports in table, JSON, or other formats for integration with CI/CD pipelines.
+
+```yaml
+  # Build and Push Docker Image Job
+  build-push-container-image:
+    runs-on: ubuntu-latest
+    needs: build-artifact # Depend on the artifact build job
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jar-artifact
+          path: target/
+
+      - name: Build Docker Image
+        run: docker build -t nbicocchi/product-service-ci-cd:latest .
+
+      - name: Run Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'docker.io/nbicocchi/product-service-ci-cd:latest'
+          format: 'table'
+          exit-code: '1' # Fail the job if critical issues are found
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }} # Docker Hub username
+          password: ${{ secrets.DOCKER_PASSWORD }} # Docker Hub password
+
+      - name: Push Docker Image to Docker Hub
+        run: docker push nbicocchi/product-service-ci-cd:latest
 ```
 
-Now we can install **docker**:
+## Resources
 
-```bash
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-```
-
-Create the **docker group**:
-
-```bash
-sudo groupadd docker
-sudo usermod -aG docker $USER
-```
-
-### Upload production Docker Compose file
-
-Create an **app** directory inside the **VM**:
-
-```bash
-mkdir ~/app
-```
-
-Create the **.env** file with db credentials:
-
-```bash
-MYSQL_ROOT_PASSWORD=rootpwd
-MYSQL_DATABASE=review-db
-MYSQL_USER=user
-MYSQL_PASSWORD=pwd
-```
-
-We can now copy our **.env** file inside the **VM**:
-
-```bash
-scp -i key .env michele_mosca026@34.89.80.17:app/
-```
-
-Copy this **docker-compose** file with our container image as product's image:
-
-```yml
-services:
-  product:
-    image: registry.gitlab.com/michelemosca/devsecops-pipeline-development:latest
-    mem_limit: 512m
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      mongodb:
-        condition: service_healthy
-
-  recommendation:
-    build: microservices/recommendation-service
-    mem_limit: 512m
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      mongodb:
-        condition: service_healthy
-
-  review:
-    build: microservices/review-service
-    mem_limit: 512m
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      mysql:
-        condition: service_healthy
-
-  product-composite:
-    build: microservices/product-composite-service
-    mem_limit: 512m
-    ports:
-      - "8888:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-
-  mongodb:
-    image: mongo:6.0.4
-    mem_limit: 512m
-    ports:
-      - "27017:27017"
-    command: mongod
-    healthcheck:
-      test: "mongostat -n 1"
-      interval: 5s
-      timeout: 2s
-      retries: 60
-
-  mysql:
-    image: mysql:8.0.32
-    mem_limit: 512m
-    ports:
-      - "3306:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-    healthcheck:
-      test: "/usr/bin/mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute \"SHOW DATABASES;\""
-      interval: 5s
-      timeout: 2s
-      retries: 60
-```
-
-We can now **run** our application on production environment:
-
-```bash
-docker compose -f ~/app/docker-compose.yml --env-file ~/app/.env up -d
-```
-
-We can test it using the [test-em-all.bash](https://github.com/PacktPublishing/Microservices-with-Spring-Boot-and-Spring-Cloud-Third-Edition/blob/main/Chapter06/test-em-all.bash) script:
-
-```bash
-HOST=34.89.80.17 PORT=8888 ./test-em-all.bash
-```
-
-With this results:
-
-```
-Start Tests: ven 12 lug 2024, 19:09:16, CEST
-HOST=34.89.80.17
-PORT=8888
-Wait for: curl -X DELETE http://34.89.80.17:8888/product-composite/13... DONE, continues...
-Test OK (HTTP Code: 200)
-Test OK (HTTP Code: 200)
-Test OK (HTTP Code: 200)
-Test OK (HTTP Code: 200)
-Test OK (actual value: 1)
-Test OK (actual value: 3)
-Test OK (actual value: 3)
-Test OK (HTTP Code: 404, {"timestamp":"2024-07-12T17:09:29.597755125Z","path":"/product-composite/13","message":"No product found for productId: 13","status":404,"error":"Not Found"})
-Test OK (actual value: No product found for productId: 13)
-Test OK (HTTP Code: 200)
-Test OK (actual value: 113)
-Test OK (actual value: 0)
-Test OK (actual value: 3)
-Test OK (HTTP Code: 200)
-Test OK (actual value: 213)
-Test OK (actual value: 3)
-Test OK (actual value: 0)
-Test OK (HTTP Code: 422, {"timestamp":"2024-07-12T17:09:30.4671667Z","path":"/product-composite/-1","message":"Invalid productId: -1","status":422,"error":"Unprocessable Entity"})
-Test OK (actual value: "Invalid productId: -1")
-Test OK (HTTP Code: 400, {"timestamp":"2024-07-12T17:09:30.720+00:00","path":"/product-composite/invalidProductId","status":400,"error":"Bad Request","message":"Type mismatch.","requestId":"01afc491-16"})
-Test OK (actual value: "Type mismatch.")
-Swagger/OpenAPI tests
-Test OK (HTTP Code: 302, )
-Test OK (HTTP Code: 200)
-Test OK (HTTP Code: 200)
-Test OK (HTTP Code: 200)
-Test OK (actual value: 3.0.1)
-Test OK (actual value: http://34.89.80.17:8888)
-Test OK (HTTP Code: 200)
-End, all tests OK: ven 12 lug 2024, 19:09:27, CEST
-```
-
-### Create the Deploy Stage
-
-Create a new **Project Access Tokens** and save it as **token** file, in order to use the GitLab Container Registry and make the login:
-
-```bash
-docker login registry.gitlab.com -u michele_mosca026 -p `cat token`
-```
-
-Add into **GitLab Variables** the following variables:
-
-- **SERVER_USER**
-- **SERVER_IP**
-
-And add the **ssh private key** as **file**:
-
-- **SSH_PRIVATE_KEY**
-
-We can now setup the **deploy stage** in our **.gitlab-ci.yml** file:
-
-```yml
-🚀 Deploy:
-  stage: Deploy
-  only:
-    - main
-  script:
-    - chmod 600 $SSH_PRIVATE_KEY
-    - ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker compose -f ~/app/docker-compose.yml --env-file ~/app/.env pull"
-    - ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker compose -f ~/app/docker-compose.yml --env-file ~/app/.env up -d --build --no-deps product"
-```
-
-We can now use our GitLab pipeline to **upload newver version** of our microservice in the production environment.
-
-## Our GitLab Variables
-
-The **Variables** tabs of our GitLab project will be like this:
-
-![All GitLab Variables](images/devops-GitLab-all-variables.webp)
-
-## Our .gitlab-ci.yml file
-
-Our **.gitlab-ci.yml** file will be like this:
-
-```yml
-image: docker:latest
-services:
-  - docker:dind
-
-stages:
-  - Lint
-  - Test
-  - Build
-  - Package
-  - Scan
-  - Deploy
-
-🔎 Lint:
-  stage: Lint
-  image: gradle:7.6.4-jdk17
-  before_script:
-    - wget https://github.com/google/google-java-format/releases/download/v1.22.0/google-java-format-1.22.0-all-deps.jar
-  script:
-    - java -jar google-java-format-1.22.0-all-deps.jar --set-exit-if-changed --dry-run `git ls-files -z  '*.java' | xargs -0`
-
-🦉 GitGuardian:
-  image: gitguardian/ggshield:latest
-  stage: Test
-  script:
-    - ggshield secret scan ci
-
-🐞 Semgrep:
-  image: semgrep/semgrep:latest
-  stage: Test
-  script:
-    - semgrep ci
-
-🛡️ Trivy Repository:
-  stage: Test
-  image:
-    name: docker.io/aquasec/trivy:latest
-    entrypoint: [""]
-  variables:
-    GIT_STRATEGY: none
-    TRIVY_USERNAME: "$CI_REGISTRY_USER"
-    TRIVY_PASSWORD: "$CI_REGISTRY_PASSWORD"
-    TRIVY_AUTH_URL: "$CI_REGISTRY"
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-  script:
-    - trivy --version
-    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-    - trivy clean --all
-    - echo "Scanning Current Repository"
-    - trivy fs --cache-dir .trivycache/ --severity HIGH,CRITICAL $CI_PROJECT_DIR
-  cache:
-    paths:
-      - .trivycache/
-
-🛠️ Build:
-  stage: Build
-  image: gradle:7.6.4-jdk17
-  only:
-    - main
-  script:
-    - gradle clean build -x test
-  artifacts:
-    paths:
-      - build/libs/*.jar
-    expire_in: 1 week
-
-📦 Package:
-  stage: Package
-  only:
-    - main
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin
-  script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE --all-tags
-
-🛡️ Trivy Image:
-  stage: Scan
-  image:
-    name: docker.io/aquasec/trivy:latest
-    entrypoint: [""]
-  variables:
-    GIT_STRATEGY: none
-    TRIVY_USERNAME: "$CI_REGISTRY_USER"
-    TRIVY_PASSWORD: "$CI_REGISTRY_PASSWORD"
-    TRIVY_AUTH_URL: "$CI_REGISTRY"
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  script:
-    - trivy --version
-    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-    - trivy clean --all
-    - echo "Scanning Current Repository"
-    - trivy image --cache-dir .trivycache/ --severity HIGH,CRITICAL --scanners vuln $FULL_IMAGE_NAME -f json -o gl-container-scanning-report.json
-  cache:
-    paths:
-      - .trivycache/
-  artifacts:
-    reports:
-      container_scanning: gl-container-scanning-report.json
-
-🚀 Deploy:
-  stage: Deploy
-  only:
-    - main
-  script:
-    - chmod 600 $SSH_PRIVATE_KEY
-    - ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker compose -f ~/app/docker-compose.yml --env-file ~/app/.env pull"
-    - ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker compose -f ~/app/docker-compose.yml --env-file ~/app/.env up -d --build --no-deps product"
-```
-
-## Our GitLab DevSecOps Pipeline
-
-The final version of our **GitLab DevSecOps Pipeline**, will be like this:
-
-![GitLab DevSecOps Pipeline](images/devops-pipeline.webp)
-
-## Pre-commit hooks
-
-To make the work production more **efficient** we can implement some **pre-commit** operations, in order to fix some issues without waiting for pipeline errors.
-
-**Git hook** scripts are useful for identifying simple issues **before** submission to code review.
-
-So, we need to install the **pre-commit package**:
-
-```bash
-pip install pre-commit
-```
-
-Now we can auto-generate a configuration:
-
-```bash
-pre-commit sample-config
-```
-
-With this results:
-
-```yml
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
-repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
-    hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
-```
-
-Now write inside a **.pre-commit-config.yaml** file our pre-commit configuration, by adding also the **Google Java Formatter** script:
-
-```yml
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
-repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
-    hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-        args: [--allow-multiple-documents]
-    -   id: check-added-large-files
--   repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.14.0
-    hooks:
-    -   id: pretty-format-java
-        args: [--autofix, --google-java-formatter-version=1.22.0]
-```
-
-To apply all modification of the **pre-commit** file, run the command:
-
-```bash
-pre-commit install
-```
-
-Now **pre-commit** will run on every git commit.
