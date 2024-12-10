@@ -106,12 +106,24 @@ class MonitoringService(IService):
             dataset_id
         )
         records = pd.DataFrame(records)
+
+        columns = records.columns.to_list()
+        # Rename the second occurrence of sample_index to avoid duplication
+        sample_index_idx = [i for i, s in enumerate(columns) if "sample_index" in s]
+        columns[sample_index_idx[1]] = "targets.sample_index"
+        columns[sample_index_idx[2]] = "predictions.sample_index"
+
+        class_idx = [i for i, s in enumerate(columns) if "class" in s]
+        columns[class_idx[0]] = "target"
+        columns[class_idx[1]] = "prediction"
+
+        records.columns = columns
+
         records = records.drop(columns=[
             "dataset_id", "sample_id", "target_id",
             "sample_index", "target_index", "targets.sample_index",
             "prediction_id", "prediction_index", "predictions.sample_index"
         ])
-        records = records.rename(columns={"class": "target", "predictions.class": "prediction"})
         return records
 
     def compute_report(self, reference, current):

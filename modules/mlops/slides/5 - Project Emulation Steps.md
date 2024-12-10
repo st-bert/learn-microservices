@@ -13,7 +13,7 @@ For detailed information about all available API endpoints, request/response for
 
 ### Data Loading
 
-The first step is to load the *training* and *testing* sets into the *MySQL DB dataset*.
+The first step is to load the *training* and *testing* sets into the *PostgreSQL DB dataset*.
 
 ```
 POST request on http://127.0.0.1:5004/root/simulator
@@ -30,7 +30,7 @@ Request body: {
 ```
 ### MLflow Logging
 
-The **training set must be loaded** into the *MySQL DB dataset* before training the *ML model* and performing hyperparameter tuning.
+The **training set must be loaded** into the *PostgreSQL DB dataset* before training the *ML model* and performing hyperparameter tuning.
 
 #### Hyperparameter Tuning and Experiment Logging
 

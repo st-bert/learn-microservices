@@ -1,4 +1,5 @@
 import logging
+from sqlalchemy import text
 
 from src.persistence.repository.i_query import IQuery
 
@@ -7,7 +8,6 @@ class Query(IQuery):
         self.db = db
 
         self.logger = None
-        self.cursor = None
 
         self.samples_columns_name = None
 
@@ -21,8 +21,7 @@ class Query(IQuery):
         Create the datasets table.
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        self.db.session.execute(text('''
                 create table if not exists {}(
                 {} int not null unique,
                 {} varchar(255) unique,
@@ -33,24 +32,23 @@ class Query(IQuery):
             "dataset_id",
             "name",
             "dataset_id"
-        ))
-        self.db.connection.commit()
-        self.cursor.close()
+        )))
+        self.db.session.commit()
 
     def create_samples_table(self):
         """
         Create the samples table.
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        print(self.samples_columns_name)
+
+        self.db.session.execute(text('''
                 create table if not exists {}(
-                {} int not null unique auto_increment,
+                {} serial PRIMARY KEY,
                 {} int not null,
                 {} int not null unique,
                 {} float, {} float, {} float, {} float, {} float, {} float,
                 {} float, {} float, {} float, {} float, {} float, {} float, {} float,
-                primary key ({}),
                 foreign key ({}) references {}({}) on delete cascade on update cascade
                 );
                 '''.format(
@@ -59,25 +57,21 @@ class Query(IQuery):
             "dataset_id",
             "sample_index",
             *self.samples_columns_name,
-            "sample_id",
             "dataset_id", "datasets", "dataset_id"
-        ))
-        self.db.connection.commit()
-        self.cursor.close()
+        )))
+        self.db.session.commit()
 
     def create_predictions_table(self):
         """
         Create the predictions table.
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        self.db.session.execute(text('''
                 create table if not exists {}(
-                {} int not null unique auto_increment,
+                {} serial PRIMARY KEY,
                 {} int not null unique,
                 {} int not null unique,
                 {} int,
-                primary key ({}),
                 foreign key ({}) references {}({}) on delete cascade on update cascade
                 );
                 '''.format(
@@ -86,25 +80,21 @@ class Query(IQuery):
             "sample_index",
             "prediction_index",
             "class",
-            "prediction_id",
             "sample_index", "samples", "sample_index"
-        ))
-        self.db.connection.commit()
-        self.cursor.close()
+        )))
+        self.db.session.commit()
 
     def create_targets_table(self):
         """
         Create the targets table.
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        self.db.session.execute(text('''
                 create table if not exists {}(
-                {} int not null unique auto_increment,
+                {} serial PRIMARY KEY,
                 {} int not null unique,
                 {} int not null unique,
                 {} int,
-                primary key ({}),
                 foreign key ({}) references {}({}) on delete cascade on update cascade
                 );
                 '''.format(
@@ -113,11 +103,9 @@ class Query(IQuery):
             "sample_index",
             "target_index",
             "class",
-            "target_id",
             "sample_index", "samples", "sample_index"
-        ))
-        self.db.connection.commit()
-        self.cursor.close()
+        )))
+        self.db.session.commit()
 
     def insert_dataset_records(self, records):
         """
@@ -125,18 +113,16 @@ class Query(IQuery):
         :param records: The records to insert
         """
 
-        self.cursor = self.db.connection.cursor()
         for r in records.iterrows():
-            self.cursor.execute('''
+            self.db.session.execute(text('''
             insert into {}({}, {})
             values ({}, '{}');
             '''.format(
                 "datasets",
                 *records.columns,
                 *r[1]
-            ))
-        self.db.connection.commit()
-        self.cursor.close()
+            )))
+        self.db.session.commit()
 
     def insert_samples_records(self, records):
         """
@@ -144,18 +130,16 @@ class Query(IQuery):
         :param records: The records to insert
         """
 
-        self.cursor = self.db.connection.cursor()
         for r in records.iterrows():
-            self.cursor.execute('''
+            self.db.session.execute(text('''
             insert into {}({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
             values ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
             '''.format(
                 "samples",
                 *records.columns,
                 *r[1]
-            ))
-        self.db.connection.commit()
-        self.cursor.close()
+            )))
+        self.db.session.commit()
 
     def insert_predictions_records(self, records):
         """
@@ -163,9 +147,7 @@ class Query(IQuery):
         :param records: The records to insert
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.db.connection.commit()
-        self.cursor.close()
+        self.db.session.commit()
 
     def insert_targets_records(self, records):
         """
@@ -173,18 +155,16 @@ class Query(IQuery):
         :param records: The records to insert
         """
 
-        self.cursor = self.db.connection.cursor()
         for r in records.iterrows():
-            self.cursor.execute('''
+            self.db.session.execute(text('''
             insert into {}({}, {}, {})
             values ({}, {}, {});
             '''.format(
                 "targets",
                 *records.columns,
                 *r[1]
-            ))
-        self.db.connection.commit()
-        self.cursor.close()
+            )))
+        self.db.session.commit()
 
     def select_value(self, table):
         """
@@ -192,14 +172,12 @@ class Query(IQuery):
         :param table: The table to select from
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        result = self.db.session.execute(text('''
         select * from {};
         '''.format(
             table
-        ))
-        records = self.cursor.fetchall()
-        self.cursor.close()
+        )))
+        records = result.fetchall()
         print(len(records))
 
     def select_condition_value(self, table, condition):
@@ -209,15 +187,13 @@ class Query(IQuery):
         :param condition: The condition to select with
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        result = self.db.session.execute(text('''
         select * from {}
         where dataset_id = {};
         '''.format(
             table, condition
-        ))
-        records = self.cursor.fetchall()
-        self.cursor.close()
+        )))
+        records = result.fetchall()
         print(len(records))
 
     def select_joined_value(self, table_1, table_2, on_1, on_2):
@@ -229,17 +205,15 @@ class Query(IQuery):
         :param on_2: The second table's column to join on
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        result = self.db.session.execute(text('''
         SELECT * FROM {} join {}
         on ({}.{} = {}.{});
         '''.format(
             table_1, table_2,
             table_1, on_1,
             table_2, on_2
-        ))
-        records = self.cursor.fetchall()
-        self.cursor.close()
+        )))
+        records = result.fetchall()
         print(len(records))
         for i, r in enumerate(records):
             print(i, type(r), r)
@@ -250,14 +224,12 @@ class Query(IQuery):
         :param table: The table to delete from
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        self.db.session.execute(text('''
         delete from {};
         '''.format(
             table
-        ))
-        self.db.connection.commit()
-        self.cursor.close()
+        )))
+        self.db.session.commit()
 
     def describe_table(self, table):
         """
@@ -265,14 +237,15 @@ class Query(IQuery):
         :param table: The table to describe
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
-        describe {};
+        result = self.db.session.execute(text('''
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns
+        WHERE table_name = '{}';
         '''.format(
             table
-        ))
-        records = self.cursor.fetchall()
-        self.cursor.close()
-        print(table)
+        )))
+        records = result.fetchall()
+        print(f"Description of table: {table}")
         for i, r in enumerate(records):
+            print(f"{i}: Column: {r.column_name}, Type: {r.data_type}, Nullable: {r.is_nullable}")
             print(r)

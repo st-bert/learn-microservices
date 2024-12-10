@@ -1,7 +1,7 @@
 import logging
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 
 from src.service.i_service import IService
 from src.web.controller.i_controller import IController
@@ -12,7 +12,7 @@ class SimulatorController(IController):
             self,
             simulator_service: IService,
             app_host="127.0.0.1", app_port=5000, app_debug=False, base_url="/root", service_url="/simulator",
-            db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
+            db_host="127.0.0.1", db_port=5432, db_name="", db_user="root", db_password="pass"
     ):
         """
         Initialize SimulatorController instance.
@@ -55,21 +55,14 @@ class SimulatorController(IController):
         
         Sets up Flask app configuration, creates API instance, initializes parser,
         establishes database connection, and configures logging.
-        :raises MySQLConnectionError: If unable to connect to database
         """
         self.app = Flask(__name__)
-        self.app.config["MYSQL_HOST"] = self.db_host
-        self.app.config["MYSQL_PORT"] = self.db_port
-        self.app.config["MYSQL_DB"] = self.db_name
-        self.app.config["MYSQL_USER"] = self.db_user
-        self.app.config["MYSQL_PASSWORD"] = self.db_password
-        self.app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+        self.app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
         self.app.app_context().push()
         self.api = Api(self.app)
         self.parser = reqparse.RequestParser()
-        self.db = MySQL(self.app)
+        self.db = SQLAlchemy(self.app)
         self.logger = logging.getLogger("werkzeug")
-        # self.log.setLevel(logging.ERROR)
 
         self.simulator_service.db = self.db
         self.simulator_service.init_query()

@@ -1,4 +1,5 @@
 import logging
+from sqlalchemy import text
 
 from persistence.repository.i_query import IQuery
 
@@ -8,7 +9,6 @@ class Query(IQuery):
         self.db = db
 
         self.logger = None
-        self.cursor = None
 
         self.samples_columns_name = None
 
@@ -31,8 +31,7 @@ class Query(IQuery):
         :return: List of tuples containing the joined records
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        result = self.db.session.execute(text('''
         SELECT * FROM {} join {}
         on ({}.{} = {}.{})
         join {}
@@ -46,10 +45,7 @@ class Query(IQuery):
             table_1, on_1,
             table_3, on_3,
             "dataset_id", condition
-        ))
-        records = self.cursor.fetchall()
-        self.cursor.close()
+        )))
+        records = result.fetchall()
         print(len(records))
-        '''for i, r in enumerate(records):
-            print(i, type(r), r)'''
         return records

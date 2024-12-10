@@ -1,4 +1,5 @@
 import logging
+from sqlalchemy import text
 from src.persistence.repository.i_query import IQuery
 
 class Query(IQuery):
@@ -8,9 +9,6 @@ class Query(IQuery):
         self.mlflow = mlflow
 
         self.logger = None
-        self.cursor_data = None
-        self.cursor_mlflow = None
-
         self.samples_columns_name = None
 
         self.initialize()
@@ -29,8 +27,7 @@ class Query(IQuery):
         :return records: The records
         """
 
-        self.cursor = self.data_db.connection.cursor()
-        self.cursor.execute('''
+        result = self.data_db.session.execute(text('''
         SELECT * FROM {} join {}
         on ({}.{} = {}.{})
         where {} = {};
@@ -39,12 +36,9 @@ class Query(IQuery):
             table_1, on_1,
             table_2, on_2,
             "dataset_id", condition
-        ))
-        records = self.cursor.fetchall()
-        self.cursor.close()
+        )))
+        records = result.fetchall()
         print(len(records))
-        '''for i, r in enumerate(records):
-            print(i, type(r), r)'''
         return records
 
     def select_value(self, table):
@@ -54,11 +48,7 @@ class Query(IQuery):
         :return records: The records
         """
 
-        self.cursor_data = self.data_db.connection.cursor()
-        self.cursor_data.execute(f"SELECT * FROM {table};")
-        records = self.cursor_data.fetchall()
-        self.cursor_data.close()
+        result = self.data_db.session.execute(text(f"SELECT * FROM {table};"))
+        records = result.fetchall()
         self.logger.info(f"Records fetched from {table}: {len(records)}")
         return records
-
-

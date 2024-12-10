@@ -16,17 +16,17 @@ controller:
 
   db_dataset:
     host: "db"
-    port: 3306
+    port: 5432
     name: "wines_database"
-    user: "root"
-    password: "ale_sql_pass"
+    user: "postgres"
+    password: "postgres"
 
   db_mlflow:
     host: "mlflow_db"
-    port: 3306
+    port: 5432
     name: "mlflow_database"
-    user: "root"
-    password: "ale_sql_pass"
+    user: "postgres"
+    password: "postgres"
 
   ml:
     host: "ml"

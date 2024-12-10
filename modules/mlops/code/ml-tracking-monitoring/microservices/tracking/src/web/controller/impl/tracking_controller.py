@@ -4,7 +4,7 @@ import json
 import requests
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 from mlflow import MlflowException
 
 from src.service.i_service import IService
@@ -15,9 +15,9 @@ class TrackingController(IController):
     def __init__(self,
                  tracking_service: IService,
                  app_host="127.0.0.1", app_port=5003, app_debug=False, base_url="/root", service_url="/tracking",
-                 db_dataset_host="127.0.0.1", db_dataset_port=3306, db_dataset_name="", db_dataset_user="root",
+                 db_dataset_host="127.0.0.1", db_dataset_port=5432, db_dataset_name="", db_dataset_user="root",
                  db_dataset_password=None,
-                 db_mlflow_host="127.0.0.1", db_mlflow_port=3306, db_mlflow_name="", db_mlflow_user="root",
+                 db_mlflow_host="127.0.0.1", db_mlflow_port=5432, db_mlflow_name="", db_mlflow_user="root",
                  db_mlflow_password=None,
                  ml_host="127.0.0.1", ml_port=5001, ml_service_url="/ml"):
         """
@@ -88,28 +88,22 @@ class TrackingController(IController):
         
         Sets up Flask app configuration, creates API instance, initializes parsers,
         establishes database connections, and configures MLflow tracking URI.
-        :raises MySQLConnectionError: If unable to connect to databases
         :raises MLflowException: If unable to set up MLflow tracking
         """
         self.app = Flask(__name__)
 
-        self.app.config["MYSQL_HOST"] = self.db_dataset_host
-        self.app.config["MYSQL_PORT"] = self.db_dataset_port
-        self.app.config["MYSQL_DB"] = self.db_dataset_name
-        self.app.config["MYSQL_USER"] = self.db_dataset_user
-        self.app.config["MYSQL_PASSWORD"] = self.db_dataset_password
-        self.app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+        self.app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{self.db_dataset_user}:{self.db_dataset_password}@{self.db_dataset_host}:{self.db_dataset_port}/{self.db_dataset_name}"
 
         self.app.app_context().push()
         self.api = Api(self.app)
         self.parser = reqparse.RequestParser()
 
-        self.db_dataset = MySQL(self.app)
+        self.db_dataset = SQLAlchemy(self.app)
         self.logger = logging.getLogger("werkzeug")
 
         self.tracking_service.db = self.db_dataset
 
-        mlflow_uri = f"mysql+pymysql://{self.db_mlflow_user}:{self.db_mlflow_password}@{self.db_mlflow_host}:{self.db_mlflow_port}/{self.db_mlflow_name}"
+        mlflow_uri = f"postgresql://{self.db_mlflow_user}:{self.db_mlflow_password}@{self.db_mlflow_host}:{self.db_mlflow_port}/{self.db_mlflow_name}"
         self.tracking_service.mlflow.set_tracking_uri(mlflow_uri)
 
         self.ml_service_uri = f"http://{self.ml_host}:{self.ml_port}{self.base_url}{self.ml_service_url}"

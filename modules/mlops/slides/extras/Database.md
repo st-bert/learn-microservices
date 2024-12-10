@@ -1,6 +1,6 @@
-# MySQL DB
+# PostgreSQL DB
 
-This section provides a detailed description of the MySQL database schema used in the MLOps project.
+This section provides a detailed description of the PostgreSQL database schema used in the MLOps project.
 
 The database schema consists of two databases: a Dataset Database for storing the actual data and an MLflow Metadata Database for tracking experiments and model information.
 

@@ -2,7 +2,7 @@
 
 ## Index
 1. [Overview](#overview)
-2. [MySQL DB](#mysql-db)
+2. [PostgreSQL DB](#postgresql-db)
 3. [Simulator](#simulator)
 4. [ML Model](#ml-model)
 5. [Tracking](#tracking)
@@ -22,7 +22,7 @@ Specifically, it performs the following:
 - Monitoring of model performance and data quality.
 
 The system is composed of 5 fundamental containerized *microservices*:
-- **MySQL DB**: to *store* and *query* necessary data;
+- **PostgreSQL DB**: to *store* and *query* necessary data;
 - **simulator**: to simulate *training*, *testing* and *production* data;
 - **ML model**: a trainable model that can be tested on *data batches*;
 - **tracking**: a service to log, retrieve, and filter metadata and results from experiments, providing flexible access to metrics, parameters, and performance data. 
@@ -30,7 +30,7 @@ The system is composed of 5 fundamental containerized *microservices*:
 
 
 
-Each component is identified by a **containerized micro-service**, with its own dependencies and environment, following the typical *application layers* structure (except the *MySQL DB*).
+Each component is identified by a **containerized micro-service**, with its own dependencies and environment, following the typical *application layers* structure (except the *PostgreSQL DB*).
 
 ```
 src
@@ -49,19 +49,19 @@ All *microservices* are developed using `Python`, based on [`Flask`](https://fla
 ```
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 ```
 
-For each component, a `query.py` script (under the `src/persistence/repository` folder) is provided to *query* the *MYSQL DB* for *storing* and *requesting* the proper data.
+For each component, a `query.py` script (under the `src/persistence/repository` folder) is provided to *query* the *PostgresQL DB* for *storing* and *requesting* the proper data.
 
 To reproduce the results, a `random seed` of [42](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy) is set.
 
 Each component can be finally run with a `Dockerfile` as an independent `Docker` *container*.
 
 
-## MySQL DB
+## PostgreSQL DB
 
-The system uses two MySQL databases to manage data and metadata:
+The system uses two PostgreSQL databases to manage data and metadata:
 
 1. **Dataset Database**: Stores the datasets required for ML model prediction tasks, including:
    - Training and validation data for optimization
@@ -313,16 +313,16 @@ class SimulatorService(IService):
 ```
 
 The *Simulator service* allows to:
-- create the different *tables* inside the *MySQL DB*, specifically the **datasets**, **samples**, **targets** and **predictions** tables;
+- create the different *tables* inside the *PostgreSQL DB*, specifically the **datasets**, **samples**, **targets** and **predictions** tables;
 - load immediately the *dataset records* on startup;
-- wait for *requests* to insert *samples* and *targets*, which define the *training*, *testing* or *production* sets in the *MySQL DB*.
+- wait for *requests* to insert *samples* and *targets*, which define the *training*, *testing* or *production* sets in the *PostgreSQL DB*.
 
 #### Simulator Controller
 ```
 import logging
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 
 from service.i_service import IService
 from web.controller.i_controller import IController
@@ -333,7 +333,7 @@ class SimulatorController(IController):
             self,
             simulator_service: IService,
             app_host="127.0.0.1", app_port=5004, app_debug=False, base_url="/root", service_url="/simulator",
-            db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
+            db_host="127.0.0.1", db_port=5432, db_name="", db_user="root", db_password="pass"
     ):
         self.simulator_service = simulator_service
         self.app_host = app_host
@@ -357,18 +357,12 @@ class SimulatorController(IController):
 
     def initialize(self):
         self.app = Flask(__name__)
-        self.app.config["MYSQL_HOST"] = self.db_host
-        self.app.config["MYSQL_PORT"] = self.db_port
-        self.app.config["MYSQL_DB"] = self.db_name
-        self.app.config["MYSQL_USER"] = self.db_user
-        self.app.config["MYSQL_PASSWORD"] = self.db_password
-        self.app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+        self.app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
         self.app.app_context().push()
         self.api = Api(self.app)
         self.parser = reqparse.RequestParser()
-        self.db = MySQL(self.app)
+        self.db = SQLAlchemy(self.app)
         self.logger = logging.getLogger("werkzeug")
-        # self.log.setLevel(logging.ERROR)
 
         self.simulator_service.db = self.db
         self.simulator_service.init_query()
@@ -432,7 +426,7 @@ class Simulator(Resource):
 
 The *Simulator controller* allows:
 - building the `Flask` *App* and the *REST API*
-- instantiating a connection to the *MySQL DB*
+- instantiating a connection to the *PostgreSQL DB*
 - mapping the `Resource` to the correct *endpoint*, allowing definition of proper behavior for every **CRUD** operation
 - defining the arguments to *parse* inside the *request* body for each `Resource`
 
@@ -593,12 +587,18 @@ class MLService(IService):
 
     def define_set(self, records):
         records = pd.DataFrame(records)
-        self.prediction = records["sample_index"].to_frame(name="sample_index")
+        columns = records.columns.to_list()
+        # Rename the second occurrence of sample_index to avoid duplication
+        sample_index_idx = [i for i, s in enumerate(columns) if "sample_index" in s][1]
+        columns[sample_index_idx] = "targets.sample_index"
+        records.columns = columns
+
+        self.prediction = records[["sample_index"]].copy()
         records = records.drop(columns=[
             "dataset_id", "sample_id", "target_id",
             "sample_index", "target_index", "targets.sample_index"
         ])
-        records.replace({"null", np.nan})
+        records.fillna(records.mean(), inplace=True)
         X = records.drop(columns=["class"])
         y = records["class"]
         return X, y
@@ -629,15 +629,15 @@ class MLService(IService):
 ```
 
 The *ML Model service*:
-- Waits for requests to train or test the *ML model* on the requested dataset, properly selecting samples and targets from the *MySQL DB*
-- Returns the accuracy score of predictions made on the requested dataset and loads them into the *MySQL DB*
+- Waits for requests to train or test the *ML model* on the requested dataset, properly selecting samples and targets from the *PostgreSQL DB*
+- Returns the accuracy score of predictions made on the requested dataset and loads them into the *PostgreSQL DB*
 
 #### ML Model Controller
 ```
 import logging
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 
 from service.i_service import IService
 from web.controller.i_controller import IController
@@ -648,7 +648,7 @@ class MLController(IController):
             self,
             ml_service: IService,
             app_host="127.0.0.1", app_port=5004, app_debug=False, base_url="/root", service_url="/model",
-            db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
+            db_host="127.0.0.1", db_port=5432, db_name="", db_user="root", db_password="pass"
     ):
         self.ml_service = ml_service
         self.app_host = app_host
@@ -672,18 +672,13 @@ class MLController(IController):
 
     def initialize(self):
         self.app = Flask(__name__)
-        self.app.config["MYSQL_HOST"] = self.db_host
-        self.app.config["MYSQL_PORT"] = self.db_port
-        self.app.config["MYSQL_DB"] = self.db_name
-        self.app.config["MYSQL_USER"] = self.db_user
-        self.app.config["MYSQL_PASSWORD"] = self.db_password
-        self.app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+        self.app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+
         self.app.app_context().push()
         self.api = Api(self.app)
         self.parser = reqparse.RequestParser()
-        self.db = MySQL(self.app)
+        self.db = SQLAlchemy(self.app)
         self.logger = logging.getLogger("werkzeug")
-        # self.log.setLevel(logging.ERROR)
 
         self.ml_service.db = self.db
         self.ml_service.init_query()
@@ -745,7 +740,7 @@ class Model(Resource):
 
 The *ML Model controller* allows us to:
 - Build the `Flask` *App* and *REST API*
-- Instantiate a connection to the *MySQL DB* 
+- Instantiate a connection to the *PostgreSQL DB* 
 - Map the `Resource` to the correct *endpoint*, defining proper behavior for every **CRUD** operation
 - Define arguments to parse from the request body for each `Resource`
 
@@ -902,7 +897,7 @@ class TrackingService(IService):
 - Sets up a logger for event tracking
 - Assigns the MLflow object for tracking experiments 
 - Initializes the query configuration by calling init_query()
-- Stores a MySQL database connection instance in self.db
+- Stores a PostgreSQL database connection instance in self.db
 
 3. **Model Optimization and Tracking**
 ```
@@ -920,13 +915,20 @@ This function performs one of the main tasks. The operations performed are:
 - 3.2 **Splits data into X (features) and y (target)**
 ```
     def define_set(self, records):
+        
         records = pd.DataFrame(records)
-        self.prediction = records["sample_index"].to_frame(name="sample_index")
-        records = records.drop(columns=[
+        self.prediction = records["sample_index"]
+
+        # List of columns to drop
+        columns_to_drop = [
             "dataset_id", "sample_id", "target_id",
             "sample_index", "target_index", "targets.sample_index"
-        ])
-        records.replace({"null", np.nan})
+        ]
+
+        # Drop only the columns that exist in the DataFrame
+        records = records.drop(columns=[col for col in columns_to_drop if col in records.columns], errors='ignore')
+
+        records.replace({"null": np.nan}, inplace=True) 
         X = records.drop(columns=["class"])
         y = records["class"]
         return X, y
@@ -1311,7 +1313,7 @@ import json
 import requests
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 from mlflow import MlflowException
 
 from src.service.i_service import IService
@@ -1322,9 +1324,9 @@ class TrackingController(IController):
     def __init__(self,
                  tracking_service: IService,
                  app_host="127.0.0.1", app_port=5003, app_debug=False, base_url="/root", service_url="/tracking",
-                 db_dataset_host="127.0.0.1", db_dataset_port=3306, db_dataset_name="", db_dataset_user="root",
+                 db_dataset_host="127.0.0.1", db_dataset_port=5432, db_dataset_name="", db_dataset_user="root",
                  db_dataset_password=None,
-                 db_mlflow_host="127.0.0.1", db_mlflow_port=3306, db_mlflow_name="", db_mlflow_user="root",
+                 db_mlflow_host="127.0.0.1", db_mlflow_port=5432, db_mlflow_name="", db_mlflow_user="root",
                  db_mlflow_password=None,
                  ml_host="127.0.0.1", ml_port=5001, ml_service_url="/ml"):
 
@@ -1369,23 +1371,18 @@ class TrackingController(IController):
     def initialize(self):
         self.app = Flask(__name__)
 
-        self.app.config["MYSQL_HOST"] = self.db_dataset_host
-        self.app.config["MYSQL_PORT"] = self.db_dataset_port
-        self.app.config["MYSQL_DB"] = self.db_dataset_name
-        self.app.config["MYSQL_USER"] = self.db_dataset_user
-        self.app.config["MYSQL_PASSWORD"] = self.db_dataset_password
-        self.app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+        self.app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{self.db_dataset_user}:{self.db_dataset_password}@{self.db_dataset_host}:{self.db_dataset_port}/{self.db_dataset_name}"
 
         self.app.app_context().push()
         self.api = Api(self.app)
         self.parser = reqparse.RequestParser()
 
-        self.db_dataset = MySQL(self.app)
+        self.db_dataset = SQLAlchemy(self.app)
         self.logger = logging.getLogger("werkzeug")
 
         self.tracking_service.db = self.db_dataset
 
-        mlflow_uri = f"mysql+pymysql://{self.db_mlflow_user}:{self.db_mlflow_password}@{self.db_mlflow_host}:{self.db_mlflow_port}/{self.db_mlflow_name}"
+        mlflow_uri = f"postgresql://{self.db_mlflow_user}:{self.db_mlflow_password}@{self.db_mlflow_host}:{self.db_mlflow_port}/{self.db_mlflow_name}"
         self.tracking_service.mlflow.set_tracking_uri(mlflow_uri)
 
         self.ml_service_uri = f"http://{self.ml_host}:{self.ml_port}{self.base_url}{self.ml_service_url}"
@@ -1395,19 +1392,19 @@ class TrackingController(IController):
         self.add_resource()
 ```
 
-- **Import Libraries:** Import modules for logging, request handling, MySQL interaction, and MLflow.
+- **Import Libraries:** Import modules for logging, request handling, PostgreSQL interaction, and MLflow.
 
 - **Initialize Parameters:**
   - Set host, ports, database credentials, and ML service settings.
 
 - **Configure Flask App:**
-  - Create a Flask application and set up the MySQL database configuration.
+  - Create a Flask application and set up the PostgreSQL database configuration.
 
 - **Initialize API and Parser:**
   - Set up a RESTful API and a request parser.
 
 - **Set Up Database:**
-  - Create an instance of the MySQL database and link it to the tracking service.
+  - Create an instance of the PostgreSQL database and link it to the tracking service.
 
 - **Configure MLflow:**
   - Set the tracking URI for MLflow using the provided credentials.
@@ -2163,12 +2160,23 @@ class MonitoringService(IService):
             dataset_id
         )
         records = pd.DataFrame(records)
+
+        columns = records.columns.to_list()
+        # Rename the second occurrence of sample_index to avoid duplication
+        sample_index_idx = [i for i, s in enumerate(columns) if "sample_index" in s]
+        columns[sample_index_idx[1]] = "targets.sample_index"
+        columns[sample_index_idx[2]] = "predictions.sample_index"
+
+        class_idx = [i for i, s in enumerate(columns) if "class" in s]
+        columns[class_idx[0]] = "target"
+        columns[class_idx[1]] = "prediction"
+
+        records.columns = columns
         records = records.drop(columns=[
             "dataset_id", "sample_id", "target_id",
             "sample_index", "target_index", "targets.sample_index",
             "prediction_id", "prediction_index", "predictions.sample_index"
         ])
-        records = records.rename(columns={"class": "target", "predictions.class": "prediction"})
         return records
 
     def compute_report(self, reference, current):
@@ -2207,7 +2215,7 @@ class MonitoringService(IService):
 ```
 
 The *Monitoring service* allows:
-- Handling requests to compute *reports*, *tests*, or *summaries* by properly selecting *samples*, *targets*, and *predictions* from the *MySQL DB*, and loading the results back into the *MySQL DB*.
+- Handling requests to compute *reports*, *tests*, or *summaries* by properly selecting *samples*, *targets*, and *predictions* from the *PostgreSQL DB*, and loading the results back into the *PostgreSQL DB*.
 
 
 #### Monitoring Controller
@@ -2215,7 +2223,7 @@ The *Monitoring service* allows:
 import logging
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 
 from service.i_service import IService
 from web.controller.i_controller import IController
@@ -2226,7 +2234,7 @@ class MonitoringController(IController):
             self,
             monitoring_service: IService,
             app_host="127.0.0.1", app_port=5004, app_debug=False, base_url="/root", service_url="/monitoring",
-            db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
+            db_host="127.0.0.1", db_port=5432, db_name="", db_user="root", db_password="pass"
     ):
         self.monitoring_service = monitoring_service
         self.app_host = app_host
@@ -2250,18 +2258,12 @@ class MonitoringController(IController):
 
     def initialize(self):
         self.app = Flask(__name__)
-        self.app.config["MYSQL_HOST"] = self.db_host
-        self.app.config["MYSQL_PORT"] = self.db_port
-        self.app.config["MYSQL_DB"] = self.db_name
-        self.app.config["MYSQL_USER"] = self.db_user
-        self.app.config["MYSQL_PASSWORD"] = self.db_password
-        self.app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+        self.app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
         self.app.app_context().push()
         self.api = Api(self.app)
         self.parser = reqparse.RequestParser()
-        self.db = MySQL(self.app)
+        self.db = SQLAlchemy(self.app)
         self.logger = logging.getLogger("werkzeug")
-        # self.log.setLevel(logging.ERROR)
 
         self.monitoring_service.db = self.db
         self.monitoring_service.init_query()
@@ -2321,7 +2323,7 @@ class Monitoring(Resource):
 
 The *Monitoring Controller* allows you to:
 - Build the `Flask` *App* and *REST API*
-- Instantiate a connection to the *MySQL DB* 
+- Instantiate a connection to the *PostgreSQL DB* 
 - Map the `Resource` to the correct *endpoint*, defining proper behavior for each **CRUD** operation
 - Define the arguments to parse from the request body for each `Resource`
 
@@ -2330,7 +2332,7 @@ The *Monitoring Controller* allows you to:
 ## Run Microservices
 
 To run all the [`Docker`](https://www.docker.com/) *containers*, it is sufficient to run the command `./launch.sh` following the [README.md](../code/ml-tracking-monitoring/README.md). This will build every container based on the `docker-compose.yml` file.
-All *containers* can run simultaneously in the background. The *simulator*, *ML model* and *tracking* *microservices* are mapped to different *ports* and rely on the *health check* performed on the *MySQL DB* *container*.
+All *containers* can run simultaneously in the background. The *simulator*, *ML model* and *tracking* *microservices* are mapped to different *ports* and rely on the *health check* performed on the *PostgreSQL DB* *container*.
 
 
 ## Future Integration

@@ -14,8 +14,8 @@ controller:
     service_url: "/ml"
   db:
     host: "db"
-    port: 3306
+    port: 5432
     name: "wines_database"
-    user: "root"
-    password: "ale_sql_pass"
+    user: "postgres"
+    password: "postgres"
 

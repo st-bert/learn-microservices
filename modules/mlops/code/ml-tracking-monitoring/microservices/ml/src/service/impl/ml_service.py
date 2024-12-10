@@ -156,7 +156,13 @@ class MLService(IService):
         """
 
         records = pd.DataFrame(records)
-        self.prediction = records["sample_index"].to_frame(name="sample_index")
+        columns = records.columns.to_list()
+        # Rename the second occurrence of sample_index to avoid duplication
+        sample_index_idx = [i for i, s in enumerate(columns) if "sample_index" in s][1]
+        columns[sample_index_idx] = "targets.sample_index"
+        records.columns = columns
+
+        self.prediction = records[["sample_index"]].copy()
         records = records.drop(columns=[
             "dataset_id", "sample_id", "target_id",
             "sample_index", "target_index", "targets.sample_index"

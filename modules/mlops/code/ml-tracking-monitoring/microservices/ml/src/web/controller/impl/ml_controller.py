@@ -1,7 +1,7 @@
 import logging
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 
 from src.service.i_service import IService
 from src.web.controller.i_controller import IController
@@ -12,7 +12,7 @@ class MLController(IController):
             self,
             ml_service: IService,
             app_host="127.0.0.1", app_port=5000, app_debug=False, base_url="/root", service_url="/ml",
-            db_host="127.0.0.1", db_port=3306, db_name="", db_user="root", db_password="pass"
+            db_host="127.0.0.1", db_port=5432, db_name="", db_user="postgres", db_password="pass"
     ):
         """
         Initialize MLController instance.
@@ -24,7 +24,7 @@ class MLController(IController):
         :param base_url: Base URL for API endpoints, defaults to "/root"
         :param service_url: Service-specific URL path, defaults to "/ml"
         :param db_host: Database host address, defaults to "127.0.0.1"
-        :param db_port: Database port, defaults to 3306
+        :param db_port: Database port, defaults to 5432
         :param db_name: Database name, defaults to ""
         :param db_user: Database username, defaults to "root"
         :param db_password: Database password, defaults to "pass"
@@ -58,18 +58,13 @@ class MLController(IController):
         """
 
         self.app = Flask(__name__)
-        self.app.config["MYSQL_HOST"] = self.db_host
-        self.app.config["MYSQL_PORT"] = self.db_port
-        self.app.config["MYSQL_DB"] = self.db_name
-        self.app.config["MYSQL_USER"] = self.db_user
-        self.app.config["MYSQL_PASSWORD"] = self.db_password
-        self.app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+        self.app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+
         self.app.app_context().push()
         self.api = Api(self.app)
         self.parser = reqparse.RequestParser()
-        self.db = MySQL(self.app)
+        self.db = SQLAlchemy(self.app)
         self.logger = logging.getLogger("werkzeug")
-        # self.log.setLevel(logging.ERROR)
 
         self.ml_service.db = self.db
         self.ml_service.init_query()

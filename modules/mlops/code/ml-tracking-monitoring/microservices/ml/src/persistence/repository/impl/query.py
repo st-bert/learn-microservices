@@ -1,4 +1,5 @@
 import logging
+from sqlalchemy import text
 
 from src.persistence.repository.i_query import IQuery
 
@@ -8,7 +9,6 @@ class Query(IQuery):
         self.db = db
 
         self.logger = None
-        self.cursor = None
 
         self.samples_columns_name = None
 
@@ -24,20 +24,18 @@ class Query(IQuery):
         :param records: DataFrame containing prediction records with columns matching the predictions table
         """
 
-        self.cursor = self.db.connection.cursor()
         for r in records.iterrows():
-            self.cursor.execute('''
+            self.db.session.execute(text('''
             INSERT INTO {}({}, {}, {})
             VALUES ({}, {}, {})
-            ON DUPLICATE KEY UPDATE
-                class = VALUES(class);
+            ON CONFLICT (sample_index) DO UPDATE SET
+                class = EXCLUDED.class;
             '''.format(
                 "predictions",
                 *records.columns,
                 *r[1]
-            ))
-        self.db.connection.commit()
-        self.cursor.close()
+            )))
+        self.db.session.commit()
 
     def select_joined_conditioned_value(self, table_1, table_2, on_1, on_2, condition):
         """
@@ -51,8 +49,7 @@ class Query(IQuery):
         :return: List of tuples containing the joined records
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
+        result = self.db.session.execute(text('''
         SELECT * FROM {} join {}
         on ({}.{} = {}.{})
         where {} = {};
@@ -61,12 +58,9 @@ class Query(IQuery):
             table_1, on_1,
             table_2, on_2,
             "dataset_id", condition
-        ))
-        records = self.cursor.fetchall()
-        self.cursor.close()
+        )))
+        records = result.fetchall()
         print(len(records))
-        '''for i, r in enumerate(records):
-            print(i, type(r), r)'''
         return records
 
     def select_value(self, table):
@@ -77,14 +71,12 @@ class Query(IQuery):
         :return: List of tuples containing the records
         """
 
-        self.cursor = self.db.connection.cursor()
-        self.cursor.execute('''
-        select * from {};
+        result = self.db.session.execute(text('''
+        SELECT * FROM {};
         '''.format(
             table
-        ))
-        records = self.cursor.fetchall()
-        self.cursor.close()
+        )))
+        records = result.fetchall()
         print(len(records))
         for i, r in enumerate(records):
             print(i, type(r), r)

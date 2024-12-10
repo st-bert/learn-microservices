@@ -95,12 +95,18 @@ class TrackingService(IService):
         """
 
         records = pd.DataFrame(records)
-        self.prediction = records["sample_index"].to_frame(name="sample_index")
-        records = records.drop(columns=[
+        self.prediction = records["sample_index"]
+
+        # List of columns to drop
+        columns_to_drop = [
             "dataset_id", "sample_id", "target_id",
             "sample_index", "target_index", "targets.sample_index"
-        ])
-        records.replace({"null", np.nan})
+        ]
+
+        # Drop only the columns that exist in the DataFrame
+        records = records.drop(columns=[col for col in columns_to_drop if col in records.columns], errors='ignore')
+
+        records.replace({"null": np.nan}, inplace=True) 
         X = records.drop(columns=["class"])
         y = records["class"]
         return X, y

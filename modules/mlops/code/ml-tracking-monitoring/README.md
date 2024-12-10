@@ -16,7 +16,7 @@ The system integrates with **MLflow** for:
 
 The system comprises five primary containerized microservices:
 
-- **MySQL Database**: Stores and organizes all relevant experiment data;
+- **PostgreSQL Database**: Stores and organizes all relevant experiment data;
 - **Simulator**: Generates simulated *training*, *testing*, and *production* datasets;
 - **ML Model Service**: Manages a trainable ML model that can be evaluated on simulated data batches;
 - **Tracking Service**: Handles experiment optimization, logging, and retrieval of metadata and artifacts;
@@ -56,7 +56,7 @@ chmod +x launch.sh
 If you encounter a platform-specific issue, you may need to change the platform in the docker-compose.yml file.
 
 The system will start the following services:
-- MySQL Database (port 3306)
+- PostgreSQL Database (port 5432)
 - ML Model Service (port 5001)
 - Tracking Service (port 5002)
 - Monitoring Service (port 5003)
